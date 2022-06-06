@@ -1,0 +1,7 @@
+# ignore compiled bytecode
+__pycache__/
+*.pyc
+
+# exclude the folders with the compiled files (object files and executables) -> add these folders as empty or the fetched repository yields an error with make since these folders would else not be included at all
+# obj/
+# build/
