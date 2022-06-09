@@ -2,24 +2,28 @@
 #!/usr/bin/python3
 
 import crawl
+import time
 import sqlhandler
 from sys import exit
 
-"""
+
+
+
 # crawling events testing
 driver_instance = crawl.crawler(False, 800, 600, 2)
+
 driver = driver_instance.init_driver()
 
-#page_to_fetch = "https://webscraper.io/test-sites/e-commerce/allinone"
-page_to_fetch = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?dswid=5214&dsrid=967&courseNr=254037&semester=2021S"
+driver_instance.tiss_login(driver)
 
+#page_to_fetch = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?dswid=5214&dsrid=967&courseNr=254037&semester=2021S"
+#driver_instance.fetch_page(driver, page_to_fetch)
 
-driver_instance.fetch_page(driver, page_to_fetch)
+wait = input("Press Enter to continue.")
+
 driver_instance.close_driver(driver)
-"""
 
-
-
+exit()
 
 
 

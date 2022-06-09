@@ -3,18 +3,8 @@
 
 import mysql.connector as database
 
-from pathlib import Path
-
-# load sql login credentials from an external file
-my_file = Path("src/config.py")
-
-# default ones for the tests (github CI).
-dbLoginUser = ""
-dbLoginPassword = ""
-dbHostURL = ""
-
-if my_file.is_file():
-	from config import *
+# DB login credentials
+from config import *
 
 class SqlHandler:
 	"""This class handles access to the SQL server (connection, data manipulation, etc.).

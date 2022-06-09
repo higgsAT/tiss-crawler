@@ -5,6 +5,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from time import sleep
 
+# TISS login credentials
+from config import *
+
 class crawler:
 	"""This class contains all functions responsible for crawling webpages.
 
@@ -63,12 +66,54 @@ class crawler:
 		"""
 		return driver
 
+	def tiss_login(self, driver):
+		print("trying to log in")
+
+		# head to the login page
+		URLlogin = "https://idp.zid.tuwien.ac.at/simplesaml/module.php/core/loginuserpass.php?AuthState=_1d7ffb3e1f13ab208155e8e359ef5ce8b081b6202f%3Ahttps%3A%2F%2Fidp.zid.tuwien.ac.at%2Fsimplesaml%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fauth%26RelayState%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fportal%26cookieTime%3D1654809688"
+		driver.get(URLlogin)
+
+		# find username/password field and send the info the input fields
+		driver.find_element_by_id("username").send_keys(TissUsername)
+		driver.find_element_by_id("password").send_keys(TissPassword)
+		
+		# click login button
+		driver.find_element_by_id("samlloginbutton").click()
+
+		# load this page (else the login won't work correctly)
+		page_to_fetch = "https://login.tuwien.ac.at/AuthServ/AuthServ.authenticate?app=76"
+		driver.get(page_to_fetch)
+
+		# verify the login (search for logout string in the page source)
+		driver.get("https://tiss.tuwien.ac.at")
+		search_logout = driver.page_source.find("/admin/authentifizierung/logout")
+		#login_page_source = self.fetch_page(driver, page_to_fetch)
+
+		if (search_logout == -1):
+			print("login failed")
+		else:
+			print("login successful")
+
 	def close_driver(self, driver):
 		'''Close the webdriver properly.'''
 		print ('closing driver')
 
 		driver.close()	# close the current browser window
 		driver.quit()	# calls driver.dispose which closes all the browser windows and ends the webdriver session properly
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	def fetch_page(self, driver, page):
 		"""Fetches a single website using webdriver.
@@ -92,12 +137,11 @@ class crawler:
 
 		inner_div_content = self.verify_page_crawl(driver, page)
 
-		if inner_div_content != "":
-			print(inner_div_content)
-		else:
+		if inner_div_content == "":
 			# TODO: increase time, recrawl
 			pass
 
+		return inner_div_content
 
 	def verify_page_crawl(self, driver, page):
 		"""Check if the retrieved source code (incl. JS) has been fetched properly
@@ -122,3 +166,7 @@ class crawler:
 			inner_div_content = ""	# no contentInner div found. Define it here.
 
 		return inner_div_content
+
+
+
+
