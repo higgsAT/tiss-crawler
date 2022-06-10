@@ -94,6 +94,34 @@ class crawler:
 		else:
 			print("login successful")
 
+	def get_language(self, driver):
+		language_en_find = driver.page_source.find("language_en")
+		language_de_find = driver.page_source.find("language_de")
+
+		if (language_en_find != -1):
+			language = "de"
+		elif (language_de_find != -1):
+			language = "en"
+		else:
+			# increase wait time to ensure page loading!
+			print("unable to determine language - increase page loading")
+			language = ""
+
+		return language
+
+	def switch_language(self, driver):
+		set_language = self.get_language(driver)
+
+		if (set_language == "de"):
+			driver.find_element_by_id("language_en").click()
+		else:
+			driver.find_element_by_id("language_de").click()
+
+		sleep(self.sleeptime_fetchpage)
+
+
+
+
 	def close_driver(self, driver):
 		'''Close the webdriver properly.'''
 		print ('closing driver')
