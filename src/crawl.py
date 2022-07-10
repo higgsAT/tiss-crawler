@@ -67,6 +67,11 @@ class crawler:
 		return driver
 
 	def tiss_login(self, driver):
+		"""Log in into TISS with the provided user credentials.
+
+		This function performs a login attempt which is verified
+		afterwards.
+		"""
 		print("trying to log in")
 
 		# head to the login page
@@ -95,6 +100,11 @@ class crawler:
 			print("login successful")
 
 	def get_language(self, driver):
+		"""Function to retrieve the set language.
+		
+		This function determines from the page source
+		which language is set at the moment.
+		"""
 		language_en_find = driver.page_source.find("language_en")
 		language_de_find = driver.page_source.find("language_de")
 
@@ -110,6 +120,12 @@ class crawler:
 		return language
 
 	def switch_language(self, driver):
+		"""Switch the language (DE/EN).
+		
+		Switches the set language from EN to DE and
+		vice versa, e.g. , when the set language is
+		set to EN, this function will switch it to DE.
+		"""
 		set_language = self.get_language(driver)
 
 		if (set_language == "de"):
@@ -117,6 +133,7 @@ class crawler:
 		else:
 			driver.find_element_by_id("language_de").click()
 
+		# wait for the page to be loaded correctly (JS)
 		sleep(self.sleeptime_fetchpage)
 
 
