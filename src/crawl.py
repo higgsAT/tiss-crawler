@@ -136,30 +136,6 @@ class crawler:
 		# wait for the page to be loaded correctly (JS)
 		sleep(self.sleeptime_fetchpage)
 
-
-
-
-	def close_driver(self, driver):
-		'''Close the webdriver properly.'''
-		print ('closing driver')
-
-		driver.close()	# close the current browser window
-		driver.quit()	# calls driver.dispose which closes all the browser windows and ends the webdriver session properly
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	def fetch_page(self, driver, page):
 		"""Fetches a single website using webdriver.
 
@@ -212,6 +188,30 @@ class crawler:
 
 		return inner_div_content
 
+	def fetch_academic_programs(self, driver, URL):
+		"""Extract links to academic programs.
 
+		Starting from an URL, this function extracts all
+		URLs (hrefs) to all academic programs which serve
+		as a starting point for further crawling. All found
+		links are stored and returned via a list.
+		"""
+		fetched_page = self.fetch_page(driver, URL)
 
+		elems = driver.find_elements_by_xpath("//a[@href]")
+		found_elements = []
 
+		for elem in elems:
+			href_element = elem.get_attribute("href")
+			# only select links (hrefs) to academic programs:
+			if href_element.find("key") != -1:
+				found_elements.append(href_element)
+
+		return found_elements
+
+	def close_driver(self, driver):
+		'''Close the webdriver properly.'''
+		print ('closing driver')
+
+		driver.close()	# close the current browser window
+		driver.quit()	# calls driver.dispose which closes all the browser windows and ends the webdriver session properly
