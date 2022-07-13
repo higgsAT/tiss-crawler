@@ -5,6 +5,7 @@ import crawl
 import time
 import sqlhandler
 from sys import exit
+#from time import sleep
 
 # crawling events testing
 driver_instance = crawl.crawler(False, 800, 600, 2)
@@ -16,7 +17,7 @@ driver_instance.tiss_login(driver)
 #page_to_fetch = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?dswid=5214&dsrid=967&courseNr=254037&semester=2021S"
 #driver_instance.fetch_page(driver, page_to_fetch)
 
-wait = input("Press Enter to continue1.")
+#wait = input("Press Enter to continue1.")
 
 """
 #entrance_point = "https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=37273"
@@ -40,11 +41,21 @@ print("get lang2: " + str(determine_language))
 
 
 starting_page = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
-acad_program_list = driver_instance.fetch_academic_programs(driver, starting_page)
+
+# get the links to all academic programs
+acad_program_list = driver_instance.extract_URLs(driver, starting_page, "key")
 print (acad_program_list)
 print(len(acad_program_list))
 
+driver_instance.extract_courses(driver, acad_program_list[0])
 
+
+"""
+
+acad_program_list = driver_instance.extract_URLs(driver, acad_program_list[25], "courseDetails")
+print (acad_program_list)
+print(len(acad_program_list))
+"""
 
 wait = input("Press Enter to continue4.")
 

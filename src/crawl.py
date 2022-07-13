@@ -3,6 +3,7 @@
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import Select
 from time import sleep
 
 # TISS login credentials
@@ -188,13 +189,15 @@ class crawler:
 
 		return inner_div_content
 
-	def fetch_academic_programs(self, driver, URL):
+	def extract_URLs(self, driver, URL, needle):
 		"""Extract links to academic programs.
 
 		Starting from an URL, this function extracts all
 		URLs (hrefs) to all academic programs which serve
 		as a starting point for further crawling. All found
-		links are stored and returned via a list.
+		links are stored and returned via a list. When using
+		the 'needle', only URLs containing this string will be
+		returned from the haystack.
 		"""
 		fetched_page = self.fetch_page(driver, URL)
 
@@ -204,10 +207,29 @@ class crawler:
 		for elem in elems:
 			href_element = elem.get_attribute("href")
 			# only select links (hrefs) to academic programs:
-			if href_element.find("key") != -1:
+			if href_element.find(needle) != -1:
 				found_elements.append(href_element)
 
 		return found_elements
+
+	def extract_courses(self, driver, URL):
+		"""Extract courses from the program.
+
+		This function loops through all years (HTML select element)
+		and extracts all the links (URLs) to the courses.
+		"""
+		# process the academic programs one by one
+		self.fetch_page(driver, URL)
+
+		# loop through all years and extract the courses
+		selector = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
+
+		for index in range(len(selector.options)):
+			select = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
+			select.select_by_index(index)
+			print(index)
+			sleep(self.sleeptime_fetchpage)
+
 
 	def close_driver(self, driver):
 		'''Close the webdriver properly.'''
