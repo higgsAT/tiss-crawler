@@ -216,20 +216,50 @@ class crawler:
 		"""Extract courses from the program.
 
 		This function loops through all years (HTML select element)
-		and extracts all the links (URLs) to the courses.
+		and extracts all the links (URLs) to the courses from the
+		course program / overview.
+
+		To do this, the function takes the URL to a academic program
+		and extracts the URLs to the courses for each semester. Finally,
+		duplicates are removed from the list (extracted_course_URLs) and
+		it is being returned by the function.
 		"""
-		# process the academic programs one by one
+		# fetch the online academic program
 		self.fetch_page(driver, URL)
 
-		# loop through all years and extract the courses
+		# selector element for year(semester) selection
 		selector = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
 
+		extracted_course_URLs = []
+
+		# loop through all semesters and store all links to the courses
 		for index in range(len(selector.options)):
 			select = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
 			select.select_by_index(index)
-			print(index)
 			sleep(self.sleeptime_fetchpage)
+			"""
+			print(index)
+			f = open(str(index) + ".txt", "w")
+			f.write(driver.page_source)
+			f.close()
+			"""
 
+			# extract all links found
+			elems = driver.find_elements_by_xpath("//a[@href]")
+			for elem in elems:
+				href_element = elem.get_attribute("href")
+				if href_element.find("courseDetails") != -1:
+					extracted_course_URLs.append(href_element)
+
+			#print(extracted_course_URLs)
+			#print(str(len(extracted_course_URLs)))
+
+		# remove duplicate URLs from the links
+		extracted_course_URLs = list(dict.fromkeys(extracted_course_URLs)) 
+		#print(extracted_course_URLs)
+		#print(str(len(extracted_course_URLs)))
+
+		return extracted_course_URLs
 
 	def close_driver(self, driver):
 		'''Close the webdriver properly.'''

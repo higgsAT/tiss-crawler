@@ -44,10 +44,12 @@ starting_page = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
 
 # get the links to all academic programs
 acad_program_list = driver_instance.extract_URLs(driver, starting_page, "key")
-print (acad_program_list)
+print(acad_program_list)
 print(len(acad_program_list))
 
-driver_instance.extract_courses(driver, acad_program_list[0])
+extracted_course_URLs = driver_instance.extract_courses(driver, acad_program_list[0])
+print(extracted_course_URLs)
+print(len(extracted_course_URLs))
 
 
 """
