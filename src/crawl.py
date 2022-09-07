@@ -236,13 +236,7 @@ class crawler:
 		for index in range(len(selector.options)):
 			select = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
 			select.select_by_index(index)
-			sleep(self.sleeptime_fetchpage)
-			"""
-			print(index)
-			f = open(str(index) + ".txt", "w")
-			f.write(driver.page_source)
-			f.close()
-			"""
+			sleep(2*self.sleeptime_fetchpage)
 
 			# extract all links found
 			elems = driver.find_elements_by_xpath("//a[@href]")
@@ -251,13 +245,14 @@ class crawler:
 				if href_element.find("courseDetails") != -1:
 					extracted_course_URLs.append(href_element)
 
-			#print(extracted_course_URLs)
-			#print(str(len(extracted_course_URLs)))
+		# remove years so that only the courses remain. Later on, years
+		# will be crawled individually.
+		for i in range(len(extracted_course_URLs)):
+			cut_pos = extracted_course_URLs[i].find("&semester=")
+			extracted_course_URLs[i] = extracted_course_URLs[i][:cut_pos]
 
 		# remove duplicate URLs from the links
 		extracted_course_URLs = list(dict.fromkeys(extracted_course_URLs)) 
-		#print(extracted_course_URLs)
-		#print(str(len(extracted_course_URLs)))
 
 		return extracted_course_URLs
 
