@@ -302,6 +302,8 @@ class crawler:
 
 		i = 0
 
+		extract_dict = {}
+
 		while course_raw_info.find(needle6) != -1:
 			pos6 = course_raw_info.find(needle6)
 			course_raw_info = course_raw_info[pos6 + len(needle6):]
@@ -327,68 +329,120 @@ class crawler:
 			extract_info = extract_info.replace(' class="encode"', '')
 			extract_info = extract_info.replace(' class="bulletList"', '')
 
-			if header_titletext == "Merkmale" or header_titletext == "Properties":
-				course_header_info = extract_info
+			if header_titletext == "Properties" or header_titletext == "Merkmale":
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				print(extract_info)
+				extract_info = ""
 
-			if header_titletext == "Learning outcomes" or header_titletext == "Learning outcomes":
-				course_learningoutcome_info = extract_info
+			if header_titletext == "Learning outcomes" or header_titletext == "Lernergebnisse":
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
 
 			if header_titletext == "Subject of course" or header_titletext == "Inhalt der Lehrveranstaltung":
-				course_cousesubject_info = extract_info
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
 
 			if header_titletext == "Teaching methods" or header_titletext == "Methoden":
-				course_teachmethods_info = extract_info
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
 
 			if header_titletext == "Mode of examination" or header_titletext == "Prüfungsmodus":
-				course_examinmethods_info = extract_info
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
 
 			if header_titletext == "Additional information" or header_titletext == "Weitere Informationen":
-				course_addinfo_info = extract_info
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
 
+			if header_titletext == "Lecturers" or header_titletext == "Vortragende Personen":
+				extract_dict[header_titletext] = self.extract_course_info_lecturers(extract_info)
+				extract_info = ""
 
+			if header_titletext == "Institute" or header_titletext == "Institut":
+				needle = '<li><a href='
+				pos1 = extract_info.find(needle)
+				extract_info = extract_info[pos1 + len(needle):]
+				extract_info = extract_info[extract_info.find('>') + 1:]
+				extract_dict[header_titletext] = extract_info[:extract_info.find('<')].replace('\n', '').strip()
+				extract_info = ""
 
+			if header_titletext == "Course dates" or header_titletext == "LVA Termine":
+				#TODO: extract this information
+				course_coursedate_info = ""
+				extract_info = ""
 
+			if header_titletext == "Examination modalities" or header_titletext == "Leistungsnachweis":
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
 
+			if header_titletext == "Group dates" or header_titletext == "Gruppentermine":
+				#TODO: extract this information
+				course_exams_info = ""
+				extract_info = ""
 
+			if header_titletext == "Exams" or header_titletext == "Prüfungen":
+				#TODO: extract this information
+				course_exams_info = ""
+				extract_info = ""
 
+			if header_titletext == "Course registration" or header_titletext == "LVA-Anmeldung":
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
 
+			if header_titletext == "Group Registration" or header_titletext == "Gruppen-Anmeldung":
+				#TODO: extract this information
+				course_exams_info = ""
+				extract_info = ""
 
+			if header_titletext == "Curricula":
+				extract_dict[header_titletext] = self.extract_course_info_curricula(extract_info)
+				extract_info = ""
+
+			if header_titletext == "Literature" or header_titletext == "Literatur":
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
+
+			if header_titletext == "Miscellaneous" or header_titletext == "Weitere Informationen":
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
 
 			if header_titletext == "Sprache" or header_titletext == "Language":
 				cut_str = '<input type="hidden" name='
 				cut_pos = extract_info.find(cut_str)
-				extract_info = extract_info[:cut_pos]
+				extract_dict[header_titletext] = extract_info[:cut_pos]
+				extract_info = ""
 
-			if header_titletext == "Curricula":
-				course_curricula_info = self.extract_course_info_curricula(extract_info)
-				#print(course_curricula_info)
+			#if header_titletext != "Merkmale" and header_titletext != "Properties" and header_titletext != "Curricula" and header_titletext != "Literature" and header_titletext != "Literatur" and header_titletext != "Language" and header_titletext != "Sprache" and header_titletext != "Course registration" and header_titletext != "LVA-Anmeldung" and header_titletext != "Miscellaneous" and header_titletext != "Weitere Informationen" and header_titletext != "Learning outcomes" and header_titletext != "Lernergebnisse" and header_titletext != "Subject of course" and header_titletext != "Inhalt der Lehrveranstaltung" and header_titletext != "Teaching methods" and header_titletext != "Methoden" and header_titletext != "Mode of examination" and header_titletext != "Prüfungsmodus" and header_titletext != "Additional information" and header_titletext != "Weitere Informationen" and header_titletext != "Lecturers" and header_titletext != "Vortragende Personen" and header_titletext != "Institute" and header_titletext != "Institut" and header_titletext != "Examination modalities" and header_titletext != "Leistungsnachweis" and header_titletext != "LVA Termine" and header_titletext != "Course dates" and header_titletext != "Prüfungen" and header_titletext != "Exams" and header_titletext != "Group dates" and header_titletext != "Gruppentermine":
 
-
-			if header_titletext == "Course registration" or header_titletext == "LVA-Anmeldung":
-				course_reg_info = extract_info
-
-
-
-			if header_titletext == "Literature" or header_titletext == "Literatur":
-				course_literatur_info = extract_info
-
-			if header_titletext == "Miscellaneous" or header_titletext == "Weitere Informationen":
-				course_misc_info = extract_info
-
-
-			if header_titletext == "Language" or header_titletext == "Sprache":
-				course_lang_info = extract_info
-
-
-
-
-			if header_titletext != "Merkmale" and header_titletext != "Properties" and header_titletext != "Curricula" and header_titletext != "Literature" and header_titletext != "Literatur" and header_titletext != "Language" and header_titletext != "Sprache" and header_titletext != "Course registration" and header_titletext != "LVA-Anmeldung" and header_titletext != "Miscellaneous" and header_titletext != "Weitere Informationen" and header_titletext != "Learning outcomes" and header_titletext != "Learning outcomes" and header_titletext != "Subject of course" and header_titletext != "Inhalt der Lehrveranstaltung" and header_titletext != "Teaching methods" and header_titletext != "Methoden" and header_titletext != "Mode of examination" and header_titletext != "Prüfungsmodus" and header_titletext != "Additional information" and header_titletext != "Weitere Informationen":
-				print(">=>=>=>:" + extract_info)
+			if extract_info != "":
+				warnings.warn("Error processing course description (unkown field)")
 
 			i += 1
 
 			if i > 100:
 				break
+		print(extract_dict)
+		print("\n\n")
+
+		print(extract_dict['Curricula'])
+
+
+	def extract_course_info_lecturers(self, extract_info):
+		cutstr1 = '<span>'
+		cutstr2 = '</span>'
+
+		extract_lecturer = []
+
+		while extract_info.find(cutstr1) != -1:
+			cutpos1 = extract_info.find(cutstr1)
+			cutpos2 = extract_info.find(cutstr2)
+
+			if cutpos2 > cutpos1:
+				extract_lecturer.append(extract_info[cutpos1 + len(cutstr1):cutpos2])
+
+			extract_info = extract_info[cutpos2 + len(cutstr2):]
+
+		return extract_lecturer
 
 	def extract_course_info_curricula(self, extract_info):
 		curricula_return_list = []
