@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head id="j_id_5"><link rel="stylesheet" type="text/css" href="/course/javax.faces.resource/components.css.xhtml?ln=primefaces&amp;v=7.0-TISS-1" /><link rel="stylesheet" type="text/css" href="/core/faces/javax.faces.resource/dd0560a/jtiss/css/award_logo.css" /><link rel="stylesheet" type="text/css" href="/static/2.6.3/global/css/statusMessage.css" /><script type="text/javascript" src="/course/javax.faces.resource/jquery/jquery.js.xhtml?ln=primefaces&amp;v=7.0-TISS-1"></script><script type="text/javascript" src="/course/javax.faces.resource/jquery/jquery-plugins.js.xhtml?ln=primefaces&amp;v=7.0-TISS-1"></script><script type="text/javascript" src="/course/javax.faces.resource/core.js.xhtml?ln=primefaces&amp;v=7.0-TISS-1"></script><script type="text/javascript" src="/course/javax.faces.resource/components.js.xhtml?ln=primefaces&amp;v=7.0-TISS-1"></script><script type="text/javascript" src="/course/javax.faces.resource/windowhandler.js.xhtml?ln=deltaspike"></script><script type="text/javascript" src="/course/javax.faces.resource/jsf.js.xhtml?ln=javax.faces&amp;v=2.3.9"></script><script type="text/javascript" src="/static/2.6.3/global/js/statusMessage.js"></script><script type="text/javascript">if(window.PrimeFaces){PrimeFaces.settings.locale='en';}</script><script type="text/javascript" src="/core/faces/javax.faces.resource/dd0560a/jtiss/js/myfaces_config.js"></script>
+        <link href="/static/2.6.3/global/images/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+        <link rel="apple-touch-icon" href="/static/2.6.3/global/images/mobile/apple-touch-icon-precomposed.png" />
+
+        <link href="/static/2.6.3/global/css/reset.css" rel="stylesheet" type="text/css" media="all" />
+        <link href="/static/2.6.3/global/css/basic.css" rel="stylesheet" type="text/css" media="all" />
+        <link href="/static/2.6.3/global/css/content.css" rel="stylesheet" type="text/css" media="all" />
+        <link href="/static/2.6.3/global/css/widgets.css" rel="stylesheet" type="text/css" media="all" />
+        <link href="/static/2.6.3/global/css/print.css" rel="stylesheet" type="text/css" media="print" />
+        <link href="/static/2.6.3/global/css/mobile.css" rel="stylesheet" type="text/css" media="all" id="mobileCss" />
+        <link href="/course/javax.faces.resource/css/tiss-components.css.xhtml" rel="stylesheet" type="text/css" media="all" />
+
+        <link href="/core/faces/javax.faces.resource/dd0560a/jtiss/css/workarounds.css" rel="stylesheet" type="text/css" media="all" />
+
+        <title>101.674 Analysis 1 | TU Wien</title>
+
+        <meta id="desktopMeta" name="viewport" content="width=device-width, minimum-scale=0.25, maximum-scale=2.5, user-scalable=yes" /><script type="text/javascript" src="/static/2.6.3/global/js/mobile.js"></script></head><body class="lehre en">
+        <div id="glow_left"></div>
+        <div id="glow_right"></div>
+        <div id="wrapper">
+            <div id="header">
+                <div id="headerInnerWrapper">
+                    <div id="headerInner">
+                        <div id="headerLeft">
+                            <div id="headerLeftInside">
+                                <div id="logo">
+                                    <h1><a href="/"></a></h1>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="headerCenter">
+                            <div id="headerCenterInside">
+                                <div id="paperHead">
+                                    <div id="toolNavForm">
+                                        <ul class="clearfix toolNav">
+                                                <li><span id="homeIcon" class="toolHome"></span>
+                                                </li>
+                                            <li><a href="/course/courseDetails.xhtml?courseNr=101674&amp;semester=2023S&amp;locale=de" id="language_de" name="language_de">
+                                                    <span>Deutsch</span></a>
+                                            </li>
+                                            <li>
+                                                <span><a href="/hilfe/" target="_blank">Help</a>
+                                                </span>
+                                            </li>
+                                                <li class="rightAlign"><a href="/admin/authentifizierung?instant_login=1&amp;instant_login=1&amp;url=%2Fcourse%2FcourseDetails.xhtml%3Fdswid%3D8863%26dsrid%3D227%26courseNr%3D101674%26semester%3D2023S%26locale%3Den">
+                                                        <span class="toolLogin">Login</span></a>
+                                                </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="headerRight">
+                            <div id="tuLogo"><a href="https://www.tuwien.ac.at"></a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="contentWrapper">
+                <div id="supNav">
+                    <div id="supNavHeaderWrapper">
+                        <div id="supNavHeader">
+                            <div id="supNavHeaderStroke"></div>
+                            <div id="supNavHeading"></div>
+                        </div>
+                        <div id="shadow_top"></div>
+                    </div>
+                    <div id="supNavBody"><ul><li><span><a href="/course/courseList.xhtml" id="menuAnchor_COPS" class="supNavMenuHeader">Lectures</a></span><ul class="linkBlock"><li><span><a href="/course/courseList.xhtml" id="menuAnchor_COPS_LIST" class="supNavMenuHeader">Courses</a></span></li><li><span><a href="/curriculum/studyCodes.xhtml" id="menuAnchor_CURS_PUBLIC" class="supNavMenuHeader">Academic Programs</a></span></li><li><span><a href="/thesis/theses.xhtml" id="menuAnchor_THESIS_OFFERED" class="supNavMenuHeader">Offered Theses</a></span></li></ul></li><li><span><a href="/aufnahme/aufnahmeverfahren" id="menuAnchor_AUFNAHMEVERFAHREN" class="supNavMenuHeader">Application for studies</a></span></li><li><span><a href="/mobility/mobs.xhtml" id="menuAnchor_MOBS" class="supNavMenuHeader">Mobility Services</a></span></li><li><span><a href="/events/learnSlotViewer.xhtml" id="menuAnchor_LEARN_ROOM" class="supNavMenuHeader">roomTUlearn</a></span></li><li><span><a href="/events/selectRoom.xhtml" id="menuAnchor_EV_ROOMS" class="supNavMenuHeader">Rooms</a></span><ul class="linkBlock"><li><span><a href="/events/selectRoom.xhtml" id="menuAnchor_EV_ROOMS_LIST" class="supNavMenuHeader">Booking Schedule</a></span></li></ul></li><li><span><a href="https://www.tuwien.at/studium/unterstuetzungsangebote-studierende" id="menuAnchor_629183763352004" class="supNavMenuHeader">Student Support Services</a></span></li></ul>
+                        
+                    </div>
+                </div>
+                <div id="mainNav">
+                    <div>
+                        <a id="lehreLink" href="/curriculum/studyCodes.xhtml">Lehre</a>
+                        <a id="forschungLink" href="/fpl/">Forschung</a>
+                        <a id="organisationLink" href="/">Organisation</a>
+                    </div>
+                </div><div id="content">
+                    <div id="contentInnerWrapper" class="clearfix">
+                        <div id="contentInner">
+        <h1>
+        <span class="light">101.674 </span> Analysis 1
+        <img id="isAllSteop" src="/course/javax.faces.resource/STEOP.png.xhtml?ln=img" alt="This course is in all assigned curricula part of the STEOP." height="18pt" /><div id="j_id_20" class="ui-tooltip ui-widget ui-tooltip-right"><div class="ui-tooltip-arrow"></div><div class="ui-tooltip-text ui-shadow ui-corner-all">This course is in all assigned curricula part of the STEOP.</div></div><script id="j_id_20_s" type="text/javascript">$(function(){PrimeFaces.cw("Tooltip","widget_j_id_20",{id:"j_id_20",showEffect:"fade",hideEffect:"fade",target:"isAllSteop"});});</script><div id="j_id_22" class="ui-tooltip ui-widget ui-tooltip-right"><div class="ui-tooltip-arrow"></div><div class="ui-tooltip-text ui-shadow ui-corner-all">This course is in at least 1 assigned curriculum part of the STEOP.</div></div><script id="j_id_22_s" type="text/javascript">$(function(){PrimeFaces.cw("Tooltip","widget_j_id_22",{id:"j_id_22",showEffect:"fade",hideEffect:"fade",target:"isAnySteop"});});</script>
+
+        <small class="rightAlign dropdown"><form id="semesterForm" name="semesterForm" method="post" action="/course/courseDetails.xhtml" class="inline rightSubHeader" enctype="application/x-www-form-urlencoded"><select id="semesterForm:j_id_25" name="semesterForm:j_id_25" size="1" onchange="jsf.ajax.request(this,event,{'javax.faces.behavior.event':'valueChange'})">	<option value="2023S" selected="selected">2023S</option>	<option value="2021W">2021W</option>	<option value="2021S">2021S</option>	<option value="2020W">2020W</option>	<option value="2019W">2019W</option>	<option value="2019S">2019S</option>	<option value="2018W">2018W</option>	<option value="2017W">2017W</option></select><input type="hidden" name="semesterForm_SUBMIT" value="1" /><input type="hidden" name="javax.faces.ViewState" id="j_id__v_0:javax.faces.ViewState:1" value="RkM5NzQ2MzA0REMxNTA3MDAwMDAwMDBC" autocomplete="off" /><input type="hidden" id="j_id__v_0:javax.faces.ClientWindow:1" name="javax.faces.ClientWindow" value="8863" /></form>
+        </small></h1>
+        <div id="subHeader" class="clearfix">2023S, VO, 4.5h, 7.0EC
+        </div><div id="globalMessagesPanel"></div><form id="j_id_2o" name="j_id_2o" method="post" action="/course/courseDetails.xhtml" enctype="application/x-www-form-urlencoded"><span style="float:right;"></span>
+
+    <ul class="bulletList">
+    </ul>
+
+    <h2>Properties</h2>
+    <ul class="bulletList">
+        <li>Semester hours: 4.5
+        </li>
+        <li>Credits: 7.0
+        </li>
+        <li>Type: VO Lecture
+        </li>
+            <li><span title="Course is held predominantly online">Format: Distance Learning</span>
+            </li>
+    </ul>
+        <h2>Learning outcomes</h2>
+
+        <div class="encode"><p>After successful completion of the course, students are able to</p> 
+<ul> 
+ <li>precisely formulate essential analytical statements</li> 
+ <li>prove theorems of real analysis</li> 
+ <li>work mathematically with terms that were tought in the lecture</li> 
+</ul>
+        </div>
+
+    <h2>Subject of course</h2>
+
+    <div class="encode"><p>Elementary set theory, systems of numbers, sequences and series of real numbers, functions of one real variable, continuity, differential calculus in one variable</p>
+    </div>
+        <h2>Teaching methods</h2>
+
+        <div class="encode"><p>blackboard lecture</p>
+        </div>
+        <h2>Mode of examination</h2>Written and oral
+        <h2>Additional information</h2>
+
+        <div class="encode"><p>The lecture starts in the third week of the semester since in the first two weeks the VU Introduction to working mathematically is held instead.</p> 
+<p>Further Information can be found on the webpage of the lecture and the e-learning course in TUWEL. Please register for the lecture to be able to participate in the e-learing course.</p>
+        </div>
+
+    <h2>Lecturers</h2>
+        <ul class="bulletList">
+                <li style="background-position: 0 0.75em"><span style="line-height: 25px;"><a href="https://tiss.tuwien.ac.at/adressbuch/adressbuch/person/41943" id="j_id_2o:j_id_4x:0:j_id_50:personLink" name="j_id_2o:j_id_4x:0:j_id_50:personLink" target="_blank"><span>Woracek, Harald</span></a></span>
+                </li>
+        </ul>
+
+    <h2>Institute</h2>
+    <ul class="bulletList">
+        <li><a href="https://tiss.tuwien.ac.at/adressbuch/adressbuch/orgeinheit_via_nummer/E101">E101 Institute of Analysis and Scientific Computing</a>
+        </li>
+    </ul>
+
+    <style type="text/css">
+        .greyedOut {
+            opacity: 0.4;
+            filter: alpha(opacity=40);
+        }
+    </style>
+        <h2>Course dates</h2><div id="j_id_2o:eventTable" class="ui-datatable ui-widget"><div class="ui-datatable-tablewrapper"><table role="grid"><thead id="j_id_2o:eventTable_head"><tr role="row"><th id="j_id_2o:eventTable:j_id_74" class="ui-state-default" role="columnheader" aria-label="Day" scope="col"><span class="ui-column-title">Day</span></th><th id="j_id_2o:eventTable:j_id_76" class="ui-state-default" role="columnheader" aria-label="Time" scope="col"><span class="ui-column-title">Time</span></th><th id="j_id_2o:eventTable:j_id_7a" class="ui-state-default" role="columnheader" aria-label="Date" scope="col"><span class="ui-column-title">Date</span></th><th id="j_id_2o:eventTable:j_id_7e" class="ui-state-default" role="columnheader" aria-label="Location" scope="col"><span class="ui-column-title">Location</span></th><th id="j_id_2o:eventTable:j_id_7q" class="ui-state-default" role="columnheader" aria-label="Description" scope="col"><span class="ui-column-title">Description</span></th></tr></thead><tbody id="j_id_2o:eventTable_data" class="ui-datatable-data ui-widget-content"><tr data-ri="0" class="ui-widget-content ui-datatable-even " role="row"><td role="gridcell">Wed</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell">01.03.2023 - 28.06.2023</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230301" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="1" class="ui-widget-content ui-datatable-odd " role="row"><td role="gridcell">Tue</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell">07.03.2023 - 27.06.2023</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230307" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr></tbody></table></div></div><script id="j_id_2o:eventTable_s" type="text/javascript">$(function(){PrimeFaces.cw("DataTable","widget_j_id_2o_eventTable",{id:"j_id_2o:eventTable",groupColumnIndexes:[],disableContextMenuIfEmpty:false});});</script>
+                <ul class="bulletList">
+                    <li><a id="j_id_2o:j_id_7w" href="#" class="ui-commandlink ui-widget" onclick="PF('singleEvetDlg').show();PrimeFaces.ab({s:&quot;j_id_2o:j_id_7w&quot;,f:&quot;j_id_2o&quot;,u:&quot;j_id_2o:eventDetailDateTable&quot;});return false;">Show single appointments</a>
+                    </li>
+                </ul><div id="j_id_2o:j_id_7y" class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-shadow ui-hidden-container"><div class="ui-dialog-titlebar ui-widget-header ui-helper-clearfix ui-corner-top"><span id="j_id_2o:j_id_7y_title" class="ui-dialog-title">Analysis 1 - Single appointments</span><a href="#" class="ui-dialog-titlebar-icon ui-dialog-titlebar-close ui-corner-all" aria-label="Close"><span class="ui-icon ui-icon-closethick"></span></a></div><div class="ui-dialog-content ui-widget-content" id="j_id_2o:j_id_7y_content"><div id="j_id_2o:eventDetailDateTable" class="ui-datatable ui-widget"><div id="j_id_2o:eventDetailDateTable_paginator_top" class="ui-paginator ui-paginator-top ui-widget-header ui-corner-top" role="navigation" aria-label="Pagination"><a href="#" class="ui-paginator-first ui-state-default ui-corner-all ui-state-disabled" aria-label="First Page" tabindex="-1"><span class="ui-icon ui-icon-seek-first">F</span></a><a href="#" class="ui-paginator-prev ui-state-default ui-corner-all ui-state-disabled" aria-label="Previous Page" tabindex="-1"><span class="ui-icon ui-icon-seek-prev">P</span></a><span class="ui-paginator-pages"><a class="ui-paginator-page ui-state-default ui-state-active ui-corner-all" tabindex="0" href="#">1</a><a class="ui-paginator-page ui-state-default ui-corner-all" tabindex="0" href="#">2</a></span><a href="#" class="ui-paginator-next ui-state-default ui-corner-all" aria-label="Next Page" tabindex="0"><span class="ui-icon ui-icon-seek-next">N</span></a><a href="#" class="ui-paginator-last ui-state-default ui-corner-all" aria-label="Last Page" tabindex="0"><span class="ui-icon ui-icon-seek-end">E</span></a></div><div class="ui-datatable-tablewrapper"><table role="grid"><thead id="j_id_2o:eventDetailDateTable_head"><tr role="row"><th id="j_id_2o:eventDetailDateTable:j_id_80" class="ui-state-default" role="columnheader" aria-label="" scope="col"><span class="ui-column-title">Day</span></th><th id="j_id_2o:eventDetailDateTable:j_id_83" class="ui-state-default ui-sortable-column" role="columnheader" aria-label="" scope="col"><span class="ui-column-title">Date</span><span class="ui-sortable-column-icon ui-icon ui-icon-carat-2-n-s"></span></th><th id="j_id_2o:eventDetailDateTable:j_id_86" class="ui-state-default" role="columnheader" aria-label="" scope="col"><span class="ui-column-title">Time</span></th><th id="j_id_2o:eventDetailDateTable:j_id_8b" class="ui-state-default ui-sortable-column" role="columnheader" aria-label="" scope="col"><span class="ui-column-title">Location</span><span class="ui-sortable-column-icon ui-icon ui-icon-carat-2-n-s"></span></th><th id="j_id_2o:eventDetailDateTable:j_id_8q" class="ui-state-default ui-sortable-column" role="columnheader" aria-label="" scope="col"><span class="ui-column-title">Description</span><span class="ui-sortable-column-icon ui-icon ui-icon-carat-2-n-s"></span></th></tr></thead><tbody id="j_id_2o:eventDetailDateTable_data" class="ui-datatable-data ui-widget-content"><tr data-ri="0" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">01.03.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230301" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="1" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">07.03.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230307" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="2" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">08.03.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230308" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="3" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">14.03.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230314" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="4" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">15.03.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230315" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="5" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">21.03.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230321" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="6" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">22.03.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230322" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="7" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">28.03.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230328" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="8" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">29.03.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230329" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="9" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">18.04.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230418" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="10" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">19.04.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230419" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="11" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">25.04.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230425" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="12" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">26.04.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230426" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="13" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">02.05.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230502" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="14" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">03.05.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230503" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="15" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">09.05.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230509" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="16" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">10.05.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230510" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="17" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">16.05.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230516" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="18" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">17.05.2023</td><td role="gridcell">13:00 - 15:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230517" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr><tr data-ri="19" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Tue</td><td role="gridcell">23.05.2023</td><td role="gridcell">12:00 - 14:00</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=E8&amp;initialDate=20230523" target="_blank">EI 8 Pötzl HS - QUER</a> </td><td role="gridcell">VO Analysis 1</td></tr></tbody></table></div><div id="j_id_2o:eventDetailDateTable_paginator_bottom" class="ui-paginator ui-paginator-bottom ui-widget-header ui-corner-bottom" role="navigation" aria-label="Pagination"><a href="#" class="ui-paginator-first ui-state-default ui-corner-all ui-state-disabled" aria-label="First Page" tabindex="-1"><span class="ui-icon ui-icon-seek-first">F</span></a><a href="#" class="ui-paginator-prev ui-state-default ui-corner-all ui-state-disabled" aria-label="Previous Page" tabindex="-1"><span class="ui-icon ui-icon-seek-prev">P</span></a><span class="ui-paginator-pages"><a class="ui-paginator-page ui-state-default ui-state-active ui-corner-all" tabindex="0" href="#">1</a><a class="ui-paginator-page ui-state-default ui-corner-all" tabindex="0" href="#">2</a></span><a href="#" class="ui-paginator-next ui-state-default ui-corner-all" aria-label="Next Page" tabindex="0"><span class="ui-icon ui-icon-seek-next">N</span></a><a href="#" class="ui-paginator-last ui-state-default ui-corner-all" aria-label="Last Page" tabindex="0"><span class="ui-icon ui-icon-seek-end">E</span></a></div></div><script id="j_id_2o:eventDetailDateTable_s" type="text/javascript">$(function(){PrimeFaces.cw("DataTable","widget_j_id_2o_eventDetailDateTable",{id:"j_id_2o:eventDetailDateTable",paginator:{id:['j_id_2o:eventDetailDateTable_paginator_top','j_id_2o:eventDetailDateTable_paginator_bottom'],rows:20,rowCount:30,page:0,currentPageTemplate:'({currentPage} of {totalPages})'},groupColumnIndexes:[],disableContextMenuIfEmpty:false});});</script></div></div><script id="j_id_2o:j_id_7y_s" type="text/javascript">$(function(){PrimeFaces.cw("Dialog","singleEvetDlg",{id:"j_id_2o:j_id_7y",draggable:false,resizable:false,modal:true,position:"center"});});</script>
+        <h2>Examination modalities</h2>
+
+        <div class="encode"><p>written and oral written = mostly examples to treat; neither electronic advices nor written notes are allowed ! oral = mostly theory questions</p>
+        </div>
+        <h2>Exams</h2><div id="j_id_2o:j_id_90" class="ui-datatable ui-widget"><div class="ui-datatable-tablewrapper"><table role="grid"><thead id="j_id_2o:j_id_90_head"><tr role="row"><th id="j_id_2o:j_id_90:j_id_91" class="ui-state-default" role="columnheader" aria-label="Day" scope="col"><span class="ui-column-title">Day</span></th><th id="j_id_2o:j_id_90:j_id_94" class="ui-state-default" role="columnheader" aria-label="Time" scope="col"><span class="ui-column-title">Time</span></th><th id="j_id_2o:j_id_90:j_id_99" class="ui-state-default" role="columnheader" aria-label="Date" scope="col"><span class="ui-column-title">Date</span></th><th id="j_id_2o:j_id_90:j_id_9c" class="ui-state-default" role="columnheader" aria-label="Room" scope="col"><span class="ui-column-title">Room</span></th><th id="j_id_2o:j_id_90:j_id_9n" class="ui-state-default" role="columnheader" aria-label="Mode of examination" scope="col"><span class="ui-column-title">Mode of examination</span></th><th id="j_id_2o:j_id_90:j_id_9p" class="ui-state-default" role="columnheader" aria-label="Application time" scope="col"><span class="ui-column-title">Application time</span></th><th id="j_id_2o:j_id_90:j_id_9w" class="ui-state-default" role="columnheader" aria-label="Application mode" scope="col"><span class="ui-column-title">Application mode</span></th><th id="j_id_2o:j_id_90:j_id_9y" class="ui-state-default" role="columnheader" aria-label="Exam" scope="col"><span class="ui-column-title">Exam</span></th></tr></thead><tbody id="j_id_2o:j_id_90_data" class="ui-datatable-data ui-widget-content"><tr data-ri="0" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Wed</td><td role="gridcell">10:00 - 12:00</td><td role="gridcell">28.09.2022</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=F5&amp;initialDate=20220928" target="_blank">FH Hörsaal 5 - TPH</a> </td><td role="gridcell">written</td><td role="gridcell"><span id="j_id_2o:j_id_90:0:ExamRegDatePnlGrp">14.09.2022 00:00 - 23.09.2022 00:00</span></td><td role="gridcell">TISS</td><td role="gridcell">Prüfung Kaltenbäck</td></tr><tr data-ri="1" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Mon</td><td role="gridcell">14:00 - 16:00</td><td role="gridcell">10.10.2022</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=F8&amp;initialDate=20221010" target="_blank">FH 8 Nöbauer HS - MATH</a> </td><td role="gridcell">written</td><td role="gridcell"><span id="j_id_2o:j_id_90:1:ExamRegDatePnlGrp">19.09.2022 00:00 - 05.10.2022 00:00</span></td><td role="gridcell">TISS</td><td role="gridcell">Prüfung Analysis 1 Blümlinger</td></tr><tr data-ri="2" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">Mon</td><td role="gridcell">14:00 - 16:00</td><td role="gridcell">05.12.2022</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=F8&amp;initialDate=20221205" target="_blank">FH 8 Nöbauer HS - MATH</a> </td><td role="gridcell">written</td><td role="gridcell"><span id="j_id_2o:j_id_90:2:ExamRegDatePnlGrp">21.11.2022 00:00 - 28.11.2022 23:00</span></td><td role="gridcell">TISS</td><td role="gridcell">Prüfung Analysis 1 Blümlinger</td></tr><tr data-ri="3" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">Mon</td><td role="gridcell">14:00 - 16:00</td><td role="gridcell">30.01.2023</td><td role="gridcell"><a href="/events/roomSchedule.xhtml?roomCode=F8&amp;initialDate=20230130" target="_blank">FH 8 Nöbauer HS - MATH</a> </td><td role="gridcell">written</td><td role="gridcell"><span id="j_id_2o:j_id_90:3:ExamRegDatePnlGrp">16.01.2023 00:00 - 25.01.2023 00:00</span></td><td role="gridcell">TISS</td><td role="gridcell">Analysis 1 Blümlinger</td></tr></tbody></table></div></div><script id="j_id_2o:j_id_90_s" type="text/javascript">$(function(){PrimeFaces.cw("DataTable","widget_j_id_2o_j_id_90",{id:"j_id_2o:j_id_90",groupColumnIndexes:[],disableContextMenuIfEmpty:false});});</script>
+        <ul class="bulletList">
+            <li><a href="/education/course/examDateList.xhtml?courseNr=101674&amp;semester=2023S">Register for an exam</a>
+            </li>
+        </ul>
+        <h2>Course registration</h2>
+                <table class="standard big">
+                    <thead>
+                    <tr>
+                        <th>Begin</th>
+                        <th>End</th>
+                        <th>Deregistration end</th>
+                    </tr>
+                    </thead>
+                    <tr>
+                        <td>24.02.2023 11:00
+                        </td>
+                        <td>20.03.2023 12:00
+                        </td>
+                        <td>
+                        </td>
+                    </tr>
+                </table>
+                <h3>Registration modalities
+                </h3>
+
+                <div class="encode"><p>The registration is just for the TUWEL e-learning course.</p>
+                </div>
+    
+
+    
+    <h2>Curricula</h2><div id="j_id_2o:j_id_e2:j_id_e3" class="ui-datatable ui-widget"><div class="ui-datatable-tablewrapper"><table role="grid"><thead id="j_id_2o:j_id_e2:j_id_e3_head"><tr role="row"><th id="j_id_2o:j_id_e2:j_id_e3:j_id_e4" class="ui-state-default" role="columnheader" aria-label="Study Code" scope="col"><span class="ui-column-title">Study Code</span></th><th id="j_id_2o:j_id_e2:j_id_e3:j_id_ed" class="ui-state-default" role="columnheader" aria-label="Semester" scope="col"><span class="ui-column-title">Semester</span></th><th id="j_id_2o:j_id_e2:j_id_e3:j_id_ef" class="ui-state-default" role="columnheader" aria-label="Precon." scope="col"><span class="ui-column-title">Precon.</span></th><th id="j_id_2o:j_id_e2:j_id_e3:j_id_ek" class="ui-state-default" role="columnheader" aria-label="Info" scope="col"><span class="ui-column-title">Info</span></th></tr></thead><tbody id="j_id_2o:j_id_e2:j_id_e3_data" class="ui-datatable-data ui-widget-content"><tr data-ri="0" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">
+                <b><a href="/curriculum/public/curriculum.xhtml?key=63529&amp;semester=NEXT">033 201 Technical Mathematics</a>
+                </b></td><td role="gridcell">1. Semester</td><td role="gridcell"></td><td role="gridcell"><img id="j_id_2o:j_id_e2:j_id_e3:0:steop" src="/course/javax.faces.resource/STEOP.png.xhtml?ln=img" alt="true" style="height: 14pt; " /><div id="j_id_2o:j_id_e2:j_id_e3:0:j_id_en" class="ui-tooltip ui-widget ui-tooltip-right"><div class="ui-tooltip-arrow"></div><div class="ui-tooltip-text ui-shadow ui-corner-all">Course belongs to the introductory and orientation phase (&quot;Studieneingangs- und Orientierungsphase&quot;)</div></div><script id="j_id_2o:j_id_e2:j_id_e3:0:j_id_en_s" type="text/javascript">$(function(){PrimeFaces.cw("Tooltip","widget_j_id_2o_j_id_e2_j_id_e3_0_j_id_en",{id:"j_id_2o:j_id_e2:j_id_e3:0:j_id_en",showEffect:"fade",hideEffect:"fade",target:"j_id_2o:j_id_e2:j_id_e3:0:steop"});});</script></td></tr><tr data-ri="1" class="ui-widget-content ui-datatable-odd" role="row"><td role="gridcell">
+                <b><a href="/curriculum/public/curriculum.xhtml?key=36058&amp;semester=NEXT">033 203 Statistics and Mathematics in Economics</a>
+                </b></td><td role="gridcell">1. Semester</td><td role="gridcell"></td><td role="gridcell"><img id="j_id_2o:j_id_e2:j_id_e3:1:steop" src="/course/javax.faces.resource/STEOP.png.xhtml?ln=img" alt="true" style="height: 14pt; " /><div id="j_id_2o:j_id_e2:j_id_e3:1:j_id_en" class="ui-tooltip ui-widget ui-tooltip-right"><div class="ui-tooltip-arrow"></div><div class="ui-tooltip-text ui-shadow ui-corner-all">Course belongs to the introductory and orientation phase (&quot;Studieneingangs- und Orientierungsphase&quot;)</div></div><script id="j_id_2o:j_id_e2:j_id_e3:1:j_id_en_s" type="text/javascript">$(function(){PrimeFaces.cw("Tooltip","widget_j_id_2o_j_id_e2_j_id_e3_1_j_id_en",{id:"j_id_2o:j_id_e2:j_id_e3:1:j_id_en",showEffect:"fade",hideEffect:"fade",target:"j_id_2o:j_id_e2:j_id_e3:1:steop"});});</script></td></tr><tr data-ri="2" class="ui-widget-content ui-datatable-even" role="row"><td role="gridcell">
+                <b><a href="/curriculum/public/curriculum.xhtml?key=36186&amp;semester=NEXT">033 205 Financial and Actuarial Mathematics</a>
+                </b></td><td role="gridcell">1. Semester</td><td role="gridcell"></td><td role="gridcell"><img id="j_id_2o:j_id_e2:j_id_e3:2:steop" src="/course/javax.faces.resource/STEOP.png.xhtml?ln=img" alt="true" style="height: 14pt; " /><div id="j_id_2o:j_id_e2:j_id_e3:2:j_id_en" class="ui-tooltip ui-widget ui-tooltip-right"><div class="ui-tooltip-arrow"></div><div class="ui-tooltip-text ui-shadow ui-corner-all">Course belongs to the introductory and orientation phase (&quot;Studieneingangs- und Orientierungsphase&quot;)</div></div><script id="j_id_2o:j_id_e2:j_id_e3:2:j_id_en_s" type="text/javascript">$(function(){PrimeFaces.cw("Tooltip","widget_j_id_2o_j_id_e2_j_id_e3_2_j_id_en",{id:"j_id_2o:j_id_e2:j_id_e3:2:j_id_en",showEffect:"fade",hideEffect:"fade",target:"j_id_2o:j_id_e2:j_id_e3:2:steop"});});</script></td></tr></tbody></table></div></div><script id="j_id_2o:j_id_e2:j_id_e3_s" type="text/javascript">$(function(){PrimeFaces.cw("DataTable","widget_j_id_2o_j_id_e2_j_id_e3",{id:"j_id_2o:j_id_e2:j_id_e3",groupColumnIndexes:[],disableContextMenuIfEmpty:false});});</script>
+
+    <h2>Literature</h2>
+
+    <div class="encode"><p><span style="font-size: 1.2em;">The lecture is based on the book "Fundament Analysis" by Michael Kaltenb&auml;ck (in German):</span></p>
+<ul>
+<li>The book is available at INTU.books &amp; shop in the building of the main library.</li>
+<li>digital version: <a href="http://www.asc.tuwien.ac.at/analysis/lehrveranstaltungen/michael-kaltenbaeck/fundament-analysis/">http://www.asc.tuwien.ac.at/analysis/lehrveranstaltungen/michael-kaltenbaeck/fundament-analysis/</a></li>
+</ul>
+    </div>
+        <h2>Miscellaneous</h2>
+        <ul class="bulletList">
+                <li><a href="https://www.asc.tuwien.ac.at/~mfaustmann/?id=Ana" target="_blank">Course homepage</a>
+                </li>
+        </ul>
+
+    <h2>Language</h2>German<input type="hidden" name="j_id_2o_SUBMIT" value="1" /><input type="hidden" name="javax.faces.ViewState" id="j_id__v_0:javax.faces.ViewState:2" value="RkM5NzQ2MzA0REMxNTA3MDAwMDAwMDBC" autocomplete="off" /><input type="hidden" id="j_id__v_0:javax.faces.ClientWindow:2" name="javax.faces.ClientWindow" value="8863" /></form>
+                        </div>
+                    </div></div>
+            </div>
+            <div id="footer">
+                <div id="footerContent">
+                    <div id="footer-left"></div>
+                    <div id="footer-right"></div>
+                    <div id="pageEnd"></div>
+                    
+                </div>
+                <div id="footerShadow">
+                    <div id="footerShadow-left"></div>
+                    <div id="footerShadow-right"></div>
+                    <div id="baseLinks">
+                        <a href="/hilfe?pfad=support">Support</a>
+                        |
+                        <a href="https://www.it.tuwien.ac.at/regelungen/" target="_blank">Policies</a>
+                        |
+                        <a href="/ueber_tiss/impressum">Legal Notice</a>
+                        |
+                        <a href="/ueber_tiss/datenschutz">Data Privacy</a>
+                    </div>
+                    <div id="legalInfo">
+                        <p>
+                            Technische Universität Wien – Karlsplatz 13 | A-1040 Wien | Tel. +43/(0)1/58801-0 | Fax +43/(0)1/58801-41099
+                            <br /><span class="versionInfo"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div><script type="text/javascript" src="/static/2.6.3/global/js/busyCursor.js"></script><script type="text/javascript">(function(){dswh.init('8863','CLIENTWINDOW',10,{'tokenizedRedirect':false,'storeWindowTreeOnLinkClick':false,'storeWindowTreeOnButtonClick':false});})();</script><script type="text/javascript" src="/course/faces/javax.faces.resource/1662473656000/js/utils.js?v=3.9.2"></script><script type="text/javascript">
+            if (isLocalStorageEnabled()) {
+                localStorage.removeItem('cookie-count-' + window.name);
+            }
+        </script></body>
+</html>

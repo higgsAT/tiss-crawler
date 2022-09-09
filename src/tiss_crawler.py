@@ -12,7 +12,7 @@ driver_instance = crawl.crawler(False, 800, 600, 2)
 
 driver = driver_instance.init_driver()
 
-driver_instance.tiss_login(driver)
+#driver_instance.tiss_login(driver)
 
 #page_to_fetch = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?dswid=5214&dsrid=967&courseNr=254037&semester=2021S"
 #driver_instance.fetch_page(driver, page_to_fetch)
@@ -39,7 +39,7 @@ print("get lang2: " + str(determine_language))
 """
 
 
-
+"""
 starting_page = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
 
 # get the links to all academic programs
@@ -48,9 +48,18 @@ print(acad_program_list)
 print(len(acad_program_list))
 
 extracted_course_URLs = driver_instance.extract_courses(driver, acad_program_list[0])
-print(extracted_course_URLs)
-print(len(extracted_course_URLs))
+#print(extracted_course_URLs)
+#print(len(extracted_course_URLs))
+"""
 
+
+#driver_instance.extract_course_info(driver, extracted_course_URLs[0])
+
+URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?dswid=8863&dsrid=792&courseNr=206099&semester=2023S"
+#URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=253J14"
+
+
+driver_instance.extract_course_info(driver, URL)
 
 """
 
@@ -59,7 +68,7 @@ print (acad_program_list)
 print(len(acad_program_list))
 """
 
-wait = input("Press Enter to continue4.")
+#wait = input("Press Enter to continue4.")
 
 driver_instance.close_driver(driver)
 print ('\nexiting')

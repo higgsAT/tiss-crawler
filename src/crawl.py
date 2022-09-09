@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
 from time import sleep
+import warnings
 
 # TISS login credentials
 from config import *
@@ -213,7 +214,7 @@ class crawler:
 		return found_elements
 
 	def extract_courses(self, driver, URL):
-		"""Extract courses from the program.
+		"""Extract courses from the (study) program.
 
 		This function loops through all years (HTML select element)
 		and extracts all the links (URLs) to the courses from the
@@ -255,6 +256,182 @@ class crawler:
 		extracted_course_URLs = list(dict.fromkeys(extracted_course_URLs)) 
 
 		return extracted_course_URLs
+
+	def extract_course_info(self, driver, URL):
+		"""Process a single course and extract relevenat information.
+		"""
+
+		# determine course number from the (given) URL
+		needle = "courseNr="
+		course_number = URL[URL.find(needle) + len(needle):]
+		print("URL course number: " + course_number)
+
+		print("processing: " + URL)
+		#course_raw_info = self.fetch_page(driver, URL)
+		f = open("src.txt", "r")
+		course_raw_info = f.read()
+		#print(course_raw_info)
+
+		# course number and course title
+		needle1 = '<span class="light">'
+		pos1 = course_raw_info.find(needle1)
+		needle2 = "</span>"
+		pos2 = course_raw_info.find(needle2)
+		course_number = course_raw_info[pos1 + len(needle1):pos2].strip()
+		print("course nmbr: |" +  course_number + "|")
+
+		course_raw_info = course_raw_info[pos2 + len(needle2):]
+		#print(course_raw_info)
+
+		needle3 = "<"
+		pos3 = course_raw_info.find(needle3)
+		course_title = course_raw_info[:pos3].strip()
+		print("course title: |" + course_title + "|")
+
+
+		# quickinfo
+		needle4 = '<div id="subHeader" class="clearfix">'
+		pos4 = course_raw_info.find(needle4)
+		needle5 = "</div>"
+		pos5 = course_raw_info.find(needle5)
+		quickinfo = course_raw_info[pos4 + len(needle4):pos5].strip()
+		print("quickinfo: |" + quickinfo + "|")
+
+		# "h2-extraction" - each information is separated by an h2 element
+		needle6 = "<h2>"
+
+		i = 0
+
+		while course_raw_info.find(needle6) != -1:
+			pos6 = course_raw_info.find(needle6)
+			course_raw_info = course_raw_info[pos6 + len(needle6):]
+
+			print(str(i) + "########################################")
+
+			if course_raw_info.find(needle6) != -1:
+				pos7 = course_raw_info.find(needle6)
+				extract_info = course_raw_info[:pos7]
+			else:
+				extract_info = course_raw_info
+
+			#header
+			header_needle = "</h2>"
+			header_pos = extract_info.find(header_needle)
+			header_titletext = extract_info[:header_pos]
+
+			print(header_titletext + ":")
+
+			extract_info = extract_info[header_pos + len(header_needle):]
+
+			# html cleanup
+			extract_info = extract_info.replace(' class="encode"', '')
+			extract_info = extract_info.replace(' class="bulletList"', '')
+
+			if header_titletext == "Merkmale" or header_titletext == "Properties":
+				course_header_info = extract_info
+
+			if header_titletext == "Learning outcomes" or header_titletext == "Learning outcomes":
+				course_learningoutcome_info = extract_info
+
+			if header_titletext == "Subject of course" or header_titletext == "Inhalt der Lehrveranstaltung":
+				course_cousesubject_info = extract_info
+
+			if header_titletext == "Teaching methods" or header_titletext == "Methoden":
+				course_teachmethods_info = extract_info
+
+			if header_titletext == "Mode of examination" or header_titletext == "Prüfungsmodus":
+				course_examinmethods_info = extract_info
+
+			if header_titletext == "Additional information" or header_titletext == "Weitere Informationen":
+				course_addinfo_info = extract_info
+
+
+
+
+
+
+
+
+
+
+			if header_titletext == "Sprache" or header_titletext == "Language":
+				cut_str = '<input type="hidden" name='
+				cut_pos = extract_info.find(cut_str)
+				extract_info = extract_info[:cut_pos]
+
+			if header_titletext == "Curricula":
+				course_curricula_info = self.extract_course_info_curricula(extract_info)
+				#print(course_curricula_info)
+
+
+			if header_titletext == "Course registration" or header_titletext == "LVA-Anmeldung":
+				course_reg_info = extract_info
+
+
+
+			if header_titletext == "Literature" or header_titletext == "Literatur":
+				course_literatur_info = extract_info
+
+			if header_titletext == "Miscellaneous" or header_titletext == "Weitere Informationen":
+				course_misc_info = extract_info
+
+
+			if header_titletext == "Language" or header_titletext == "Sprache":
+				course_lang_info = extract_info
+
+
+
+
+			if header_titletext != "Merkmale" and header_titletext != "Properties" and header_titletext != "Curricula" and header_titletext != "Literature" and header_titletext != "Literatur" and header_titletext != "Language" and header_titletext != "Sprache" and header_titletext != "Course registration" and header_titletext != "LVA-Anmeldung" and header_titletext != "Miscellaneous" and header_titletext != "Weitere Informationen" and header_titletext != "Learning outcomes" and header_titletext != "Learning outcomes" and header_titletext != "Subject of course" and header_titletext != "Inhalt der Lehrveranstaltung" and header_titletext != "Teaching methods" and header_titletext != "Methoden" and header_titletext != "Mode of examination" and header_titletext != "Prüfungsmodus" and header_titletext != "Additional information" and header_titletext != "Weitere Informationen":
+				print(">=>=>=>:" + extract_info)
+
+			i += 1
+
+			if i > 100:
+				break
+
+	def extract_course_info_curricula(self, extract_info):
+		curricula_return_list = []
+
+		if extract_info.find('semester=NEXT">') != -1:
+			needle = 'semester=NEXT">'
+		elif extract_info.find('semester=CURRENT">') != -1:
+			needle = 'semester=CURRENT">'
+		else:
+			needle = ''
+			warnings.warn("Error processing curricula")
+
+		while extract_info.find(needle) != -1:
+			pos = extract_info.find(needle)
+			extract_info = extract_info[pos + len(needle):]
+
+			if extract_info.find(needle) != -1:
+				pos1 = extract_info.find(needle)
+				extract_info_temp = extract_info[:pos1]
+			else:
+				extract_info_temp = extract_info
+
+			sempreconinfo_list = []
+			study_code = extract_info_temp[:extract_info_temp.find('</a>')]
+			curricula_return_list.append(study_code)
+
+			# Semester,	Precon.	and Info
+			for j in range(0, 3):
+				needle2 = 'td role="gridcell">'
+				pos2 = extract_info_temp.find(needle2)
+				extract_info_temp = extract_info_temp[pos2 + len(needle2):]
+				pos3 = extract_info_temp.find('</td>')
+				extract_print = extract_info_temp[:pos3]
+				# check steop condition
+				steop_str1 = 'Studieneingangs- und Orientierungsphase'
+
+				if j == 2 and extract_print.find(steop_str1) != -1:
+					extract_print = "STEOP"
+				#print(extract_print + "|", end = " ")
+				sempreconinfo_list.append(extract_print)
+
+			curricula_return_list.append(sempreconinfo_list)
+		return curricula_return_list
 
 	def close_driver(self, driver):
 		'''Close the webdriver properly.'''
