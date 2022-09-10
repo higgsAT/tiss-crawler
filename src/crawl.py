@@ -261,15 +261,20 @@ class crawler:
 		"""Process a single course and extract relevenat information.
 		"""
 
+		#TODO: split ger/eng version of this function(s)
+
+		# dict containing all the extracted information
+		extract_dict = {}
+
 		# determine course number from the (given) URL
 		needle = "courseNr="
 		course_number = URL[URL.find(needle) + len(needle):]
 		print("URL course number: " + course_number)
 
 		print("processing: " + URL)
-		#course_raw_info = self.fetch_page(driver, URL)
-		f = open("src.txt", "r")
-		course_raw_info = f.read()
+		course_raw_info = self.fetch_page(driver, URL)
+		#f = open("src.txt", "r")
+		#course_raw_info = f.read()
 		#print(course_raw_info)
 
 		# course number and course title
@@ -279,6 +284,7 @@ class crawler:
 		pos2 = course_raw_info.find(needle2)
 		course_number = course_raw_info[pos1 + len(needle1):pos2].strip()
 		print("course nmbr: |" +  course_number + "|")
+		extract_dict["course number"] = course_number
 
 		course_raw_info = course_raw_info[pos2 + len(needle2):]
 		#print(course_raw_info)
@@ -287,6 +293,7 @@ class crawler:
 		pos3 = course_raw_info.find(needle3)
 		course_title = course_raw_info[:pos3].strip()
 		print("course title: |" + course_title + "|")
+		extract_dict["course title"] = course_title
 
 
 		# quickinfo
@@ -302,7 +309,11 @@ class crawler:
 
 		i = 0
 
-		extract_dict = {}
+		# certain sections may be present multiple times in the page. Therefore, count
+		# how many times they are present and add the integer count to the dict index.
+		count_entry_dict = {}
+		count_entry_dict["Additional information"] = 0
+		count_entry_dict["Weitere Informationen"] = 0
 
 		while course_raw_info.find(needle6) != -1:
 			pos6 = course_raw_info.find(needle6)
@@ -350,9 +361,15 @@ class crawler:
 				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
 				extract_info = ""
 
+			add_info_flag = False
+
 			if header_titletext == "Additional information" or header_titletext == "Weitere Informationen":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				add_info_flag = True
+				past_entries = count_entry_dict["Weitere Informationen"]
+
+				extract_dict[header_titletext + str(past_entries)] = extract_info.replace('\n', '').strip()
 				extract_info = ""
+				count_entry_dict["Weitere Informationen"] += 1
 
 			if header_titletext == "Lecturers" or header_titletext == "Vortragende Personen":
 				extract_dict[header_titletext] = self.extract_course_info_lecturers(extract_info)
@@ -402,7 +419,15 @@ class crawler:
 				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
 				extract_info = ""
 
-			if header_titletext == "Miscellaneous" or header_titletext == "Weitere Informationen":
+			if header_titletext == "Previous knowledge" or header_titletext == "Vorkenntnisse":
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
+
+			if header_titletext == "Preceding courses" or header_titletext == "Vorausgehende Lehrveranstaltungen":
+				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+				extract_info = ""
+
+			if header_titletext == "Miscellaneous" or header_titletext == "Weitere Informationen" and add_info_flag == False:
 				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
 				extract_info = ""
 
@@ -421,10 +446,9 @@ class crawler:
 
 			if i > 100:
 				break
-		print(extract_dict)
+		#print(extract_dict)
 		print("\n\n")
-
-		print(extract_dict['Curricula'])
+		print(*extract_dict.items(), sep='\n\n')
 
 
 	def extract_course_info_lecturers(self, extract_info):
