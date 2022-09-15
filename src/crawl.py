@@ -31,7 +31,7 @@ class crawler:
 		self.non_headless_width = non_headless_width		# width of the browser window (if run_headless == False)
 		self.sleeptime_fetchpage = sleeptime				# used in the function fetch_page() to ensure JS has been loaded
 		self.language = ""									# set language (de/en) used by extract_course_info(...)
-		self.crawl_delay = 2.0								# crawl delay in seconds
+		self.crawl_delay = 5.0								# crawl delay in seconds
 		self.last_crawltime = time.time()					# last time a page has been fetched (t_init = t_start)
 
 	def init_driver(self):
@@ -152,12 +152,12 @@ class crawler:
 		respect other interactions (e.g., select events) but since a lot relies
 		on JS to be fetched, the delay is considered inherently in these cases.
 		"""
-
 		t_diff = time.time() - self.last_crawltime 
 
 		if t_diff < self.crawl_delay:
 			time.sleep(self.crawl_delay - t_diff)
 
+		self.last_crawltime = time.time()
 		driver.get(page)
 
 	def fetch_page(self, driver, page):
