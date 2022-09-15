@@ -4,7 +4,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
-from time import sleep
+import time
 import warnings
 
 # TISS login credentials
@@ -31,6 +31,8 @@ class crawler:
 		self.non_headless_width = non_headless_width		# width of the browser window (if run_headless == False)
 		self.sleeptime_fetchpage = sleeptime				# used in the function fetch_page() to ensure JS has been loaded
 		self.language = ""									# set language (de/en) used by extract_course_info(...)
+		self.crawl_delay = 2.0								# crawl delay in seconds
+		self.last_crawltime = time.time()					# last time a page has been fetched (t_init = t_start)
 
 	def init_driver(self):
 		"""Initiate the webdriver (as defined by the user).
@@ -79,7 +81,8 @@ class crawler:
 
 		# head to the login page
 		URLlogin = "https://idp.zid.tuwien.ac.at/simplesaml/module.php/core/loginuserpass.php?AuthState=_1d7ffb3e1f13ab208155e8e359ef5ce8b081b6202f%3Ahttps%3A%2F%2Fidp.zid.tuwien.ac.at%2Fsimplesaml%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fauth%26RelayState%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fportal%26cookieTime%3D1654809688"
-		driver.get(URLlogin)
+
+		self.get_page(driver, URLlogin)
 
 		# find username/password field and send the info the input fields
 		driver.find_element_by_id("username").send_keys(TissUsername)
@@ -90,10 +93,10 @@ class crawler:
 
 		# load this page (else the login won't work correctly)
 		page_to_fetch = "https://login.tuwien.ac.at/AuthServ/AuthServ.authenticate?app=76"
-		driver.get(page_to_fetch)
+		self.get_page(driver, page_to_fetch)
 
 		# verify the login (search for logout string in the page source)
-		driver.get("https://tiss.tuwien.ac.at")
+		self.get_page(driver, "https://tiss.tuwien.ac.at")
 		search_logout = driver.page_source.find("/admin/authentifizierung/logout")
 		#login_page_source = self.fetch_page(driver, page_to_fetch)
 
@@ -139,10 +142,26 @@ class crawler:
 			self.language = "de"
 
 		# wait for the page to be loaded correctly (JS)
-		sleep(self.sleeptime_fetchpage)
+		time.sleep(self.sleeptime_fetchpage)
+
+	def get_page(self, driver, page):
+		"""Fetch a single page while respecting time delay between crawls.
+
+		Every page crawl is routed through this function to ensure that
+		a certain amount of time has passed between each call. This does not
+		respect other interactions (e.g., select events) but since a lot relies
+		on JS to be fetched, the delay is considered inherently in these cases.
+		"""
+
+		t_diff = time.time() - self.last_crawltime 
+
+		if t_diff < self.crawl_delay:
+			time.sleep(self.crawl_delay - t_diff)
+
+		driver.get(page)
 
 	def fetch_page(self, driver, page):
-		"""Fetches a single website using webdriver.
+		"""Fetches a single website and verify its crawl.
 
 		The arguments of the function are the driver instance object
 		as well as the page which should be crawled.
@@ -150,7 +169,7 @@ class crawler:
 		print ('fetching page: ', page)
 
 		# fetch the page (open the headless browser)
-		driver.get(page)
+		self.get_page(driver, page)
 
 		"""
 		Wait until the javascript code has been delivered. If this
@@ -159,7 +178,7 @@ class crawler:
 		the page sets a JS cookie, reloads/redirects and this must be resolved
 		before fetching the page or it (the fetching) will not succeed!
 		"""
-		sleep(self.sleeptime_fetchpage)
+		time.sleep(self.sleeptime_fetchpage)
 
 		inner_div_content = self.verify_page_crawl(driver, page)
 
@@ -230,6 +249,7 @@ class crawler:
 		"""
 		# fetch the online academic program
 		self.fetch_page(driver, URL)
+		time.sleep(2*self.sleeptime_fetchpage)
 
 		# selector element for year(semester) selection
 		selector = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
@@ -240,7 +260,7 @@ class crawler:
 		for index in range(len(selector.options)):
 			select = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
 			select.select_by_index(index)
-			sleep(2*self.sleeptime_fetchpage)
+			time.sleep(2*self.sleeptime_fetchpage)
 
 			# extract all links found
 			elems = driver.find_elements_by_xpath("//a[@href]")
@@ -277,6 +297,38 @@ class crawler:
 		#f = open("src.txt", "r")
 		#course_raw_info = f.read()
 		#print(course_raw_info)
+
+
+
+
+
+
+
+
+		# fetch semester option info
+		selector = Select(driver.find_element_by_name("semesterForm:j_id_25"))
+
+		for option in selector.options:
+			muh = option.text
+			kuh = option.get_attribute('value')
+			print(muh + "|" + kuh)
+
+		#for index in range(len(selector.options)):
+		select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
+		select.select_by_visible_text(muh)
+		time.sleep(3*self.sleeptime_fetchpage)
+		select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
+		select.select_by_visible_text("2015W")
+		time.sleep(3*self.sleeptime_fetchpage)
+
+
+
+
+
+
+
+
+
 
 		#LANGUAGE TESTING
 		#self.switch_language(driver)
@@ -497,6 +549,20 @@ class crawler:
 		print("\n\n")
 		print(*extract_dict.items(), sep='\n\n')
 
+		print("\n\n")
+		print(extract_dict)
+
+		stacked_dict = {}
+		stacked_dict["test123"] = extract_dict
+		stacked_dict["test456"] = extract_dict
+
+		print("\n\n")
+		print(stacked_dict)
+
+		print("\n\n")
+		print(stacked_dict["test123"]["Curricula"])
+		print("\n\n")
+		print(stacked_dict["test123"]["Curricula"][1])
 
 	def extract_course_info_lecturers(self, extract_info):
 		cutstr1 = '<span>'
@@ -550,8 +616,9 @@ class crawler:
 				# check steop condition
 				steop_str1 = 'Studieneingangs- und Orientierungsphase'
 
-				if j == 2 and extract_print.find(steop_str1) != -1:
+				if j == 2 and (extract_print.find(steop_str1) != -1 or extract_print.find("STEOP") != -1):
 					extract_print = "STEOP"
+
 				#print(extract_print + "|", end = " ")
 				sempreconinfo_list.append(extract_print)
 

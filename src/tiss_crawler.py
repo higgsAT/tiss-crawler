@@ -56,8 +56,10 @@ extracted_course_URLs = driver_instance.extract_courses(driver, acad_program_lis
 #driver_instance.extract_course_info(driver, extracted_course_URLs[0])
 
 #URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=138017"
-URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=389158"
+#URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=389158"
 #URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=253J14"
+URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=103064"
+
 
 
 driver_instance.extract_course_info(driver, URL)
