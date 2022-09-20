@@ -12,7 +12,7 @@ driver_instance = crawl.crawler(False, 800, 600, 2)
 
 driver = driver_instance.init_driver()
 
-#driver_instance.tiss_login(driver)
+driver_instance.tiss_login(driver)
 
 #page_to_fetch = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?dswid=5214&dsrid=967&courseNr=254037&semester=2021S"
 #driver_instance.fetch_page(driver, page_to_fetch)

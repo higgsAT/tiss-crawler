@@ -49,6 +49,13 @@ class crawler:
 		chrome_options.add_argument("--disable-gpu")
 		chrome_options.add_argument("--no-sandbox") # linux only
 		#chrome_options.add_experimental_option("detach", True)
+		chrome_options.add_experimental_option("prefs", {
+			"download.default_directory": r"/home/itsme/Desktop/git_repos/tiss-crawler",
+			"download.prompt_for_download": False,
+			"download.directory_upgrade": True,
+			"safebrowsing.enabled": True,
+			'profile.default_content_setting_values.automatic_downloads': 1
+		})
 
 		# option for running headless (opening a visible browser window or not)
 		if self.headless == True:
@@ -302,7 +309,7 @@ class crawler:
 
 
 
-
+		#self.switch_language(driver)
 
 
 		# fetch semester option info
@@ -321,11 +328,51 @@ class crawler:
 		select.select_by_visible_text("2015W")
 		time.sleep(3*self.sleeptime_fetchpage)
 
+		# refetch the page (to get the correct year data)
+		course_raw_info = self.fetch_page(driver, URL)
 
+		print("RAW: " + course_raw_info)
 
+		found_materials = False
 
+		if course_raw_info.find("Zu den Lehrunterlagen") != -1:
+			pos_LU = course_raw_info.find("Zu den Lehrunterlagen")
+			print("materialsDE")
+			found_materials = True
+		if course_raw_info.find("Go to Course Materials") != -1:
+			pos_LU = course_raw_info.find("Go to Course Materials")
+			print("materialsEN")
+			found_materials = True
 
+		semester_set = "2015W"
 
+		# materials found -> download them
+		if found_materials == True:
+			materials_download_link = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
+				str(course_number_URL) + "&semester=" + semester_set)
+
+		download_source_raw = self.fetch_page(driver, materials_download_link)
+		print("\n\nDOWNLOAD SOURCE: " + download_source_raw)
+
+		#self.webdriver.execute_script("arguments[0].click();", export_button)
+
+		m = 0
+		str_download_needle = 'onclick="'
+
+		while download_source_raw.find(str_download_needle) != -1:
+			download_source_raw = download_source_raw[download_source_raw.find(str_download_needle) + len(str_download_needle):]
+			download_source_extract = download_source_raw[:download_source_raw.find('ui-widget"')]
+
+			if (download_source_extract.find("Download all files as ZIP-File") != -1 or
+				download_source_extract.find("Alle Dateien als ZIP-Datei herunterladen") != -1):
+				break
+
+			download_link = download_source_extract[:download_source_extract.find('"')]
+			driver.execute_script(download_link)
+
+			m += 1
+
+		exit()
 
 
 
