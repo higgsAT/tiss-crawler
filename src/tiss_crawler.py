@@ -8,11 +8,11 @@ from sys import exit
 #from time import sleep
 
 # crawling events testing
-driver_instance = crawl.crawler(False, 800, 600, 2)
+driver_instance = crawl.crawler(False, 800, 600, 5)
 
 driver = driver_instance.init_driver()
 
-driver_instance.tiss_login(driver)
+#driver_instance.tiss_login(driver)
 
 #page_to_fetch = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?dswid=5214&dsrid=967&courseNr=254037&semester=2021S"
 #driver_instance.fetch_page(driver, page_to_fetch)
@@ -58,8 +58,8 @@ extracted_course_URLs = driver_instance.extract_courses(driver, acad_program_lis
 #URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=138017"
 #URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=389158"
 #URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=253J14"
-#URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=103064"
-URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=136019"
+URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=103064"
+#URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=136019"
 
 
 driver_instance.extract_course_info(driver, URL)

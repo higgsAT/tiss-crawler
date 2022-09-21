@@ -6,6 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
 import time
 import warnings
+import os
 
 # TISS login credentials
 from config import *
@@ -33,6 +34,7 @@ class crawler:
 		self.language = ""									# set language (de/en) used by extract_course_info(...)
 		self.crawl_delay = 5.0								# crawl delay in seconds
 		self.last_crawltime = time.time()					# last time a page has been fetched (t_init = t_start)
+		self.dowload_path_root = "/home/itsme/Desktop/git_repos/tiss-crawler/downloads/temp/"
 
 	def init_driver(self):
 		"""Initiate the webdriver (as defined by the user).
@@ -50,7 +52,7 @@ class crawler:
 		chrome_options.add_argument("--no-sandbox") # linux only
 		#chrome_options.add_experimental_option("detach", True)
 		chrome_options.add_experimental_option("prefs", {
-			"download.default_directory": r"/home/itsme/Desktop/git_repos/tiss-crawler/a",
+			"download.default_directory": self.dowload_path_root,
 			"download.prompt_for_download": False,
 			"download.directory_upgrade": True,
 			"safebrowsing.enabled": True,
@@ -256,7 +258,7 @@ class crawler:
 		"""
 		# fetch the online academic program
 		self.fetch_page(driver, URL)
-		time.sleep(2*self.sleeptime_fetchpage)
+		time.sleep(self.sleeptime_fetchpage)
 
 		# selector element for year(semester) selection
 		selector = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
@@ -267,7 +269,7 @@ class crawler:
 		for index in range(len(selector.options)):
 			select = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
 			select.select_by_index(index)
-			time.sleep(2*self.sleeptime_fetchpage)
+			time.sleep(self.sleeptime_fetchpage)
 
 			# extract all links found
 			elems = driver.find_elements_by_xpath("//a[@href]")
@@ -291,59 +293,314 @@ class crawler:
 		"""Process a single course and extract relevenat information.
 		"""
 
-		# dict containing all the extracted information
-		extract_dict = {}
+		# determine/set the language (ger/en)
+		if not self.language:
+			self.language = self.get_language(driver)
 
 		# determine course number from the (given) URL
 		needle = "courseNr="
 		course_number_URL = URL[URL.find(needle) + len(needle):]
 		print("URL course number: " + course_number_URL)
 
-		print("processing: " + URL)
-		course_raw_info = self.fetch_page(driver, URL)
-		#f = open("src.txt", "r")
-		#course_raw_info = f.read()
-		#print(course_raw_info)
+		# dict containing all the extracted information of one semester
+		extract_dict = {}
 
+		# store the available semesters (2012W, 2013W, etc.) for this course
+		# the index is the semester, the corresponding data marks optional
+		# download data (links)
+		semester_list = {}
 
+		# stacked dict with indices being semesters and each data the semester_list.
+		# This data will also be returned from this function
+		return_info_dict = {}
 
+		## fetch semester option info
+		# fetch page (to get the option informations)
+		self.fetch_page(driver, URL)
 
-
-		#self.switch_language(driver)
-
-
-		# fetch semester option info
 		selector = Select(driver.find_element_by_name("semesterForm:j_id_25"))
 
+		# loop through all semesters, extract the desired information
 		for option in selector.options:
-			muh = option.text
-			kuh = option.get_attribute('value')
-			print(muh + "|" + kuh)
+			semester_option_text = option.text
+			semester_option_attribute = option.get_attribute('value')
+			semester_list[semester_option_attribute] = ""
+			#print(semester_option_text + "|" + semester_option_attribute)
 
-		#for index in range(len(selector.options)):
-		select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
-		select.select_by_visible_text(muh)
-		time.sleep(3*self.sleeptime_fetchpage)
-		select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
-		select.select_by_visible_text("2013W")
-		time.sleep(3*self.sleeptime_fetchpage)
+		semester_iterate_list = list(semester_list.keys())
 
-		# refetch the page (to get the correct year data)
-		course_raw_info = self.fetch_page(driver, URL)
+		i_stop = 0
 
-		print("RAW: " + course_raw_info)
+		for select_semester in range(len(semester_iterate_list)):
+			print("selecting: " + semester_iterate_list[select_semester])
+			select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
+			select.select_by_visible_text(semester_iterate_list[select_semester])
+			time.sleep(self.sleeptime_fetchpage)
 
-		found_materials = False
+			selected_semester = semester_iterate_list[select_semester]
+			#print("selected semester: " + selected_semester)
 
-		if course_raw_info.find("Zu den Lehrunterlagen") != -1:
-			pos_LU = course_raw_info.find("Zu den Lehrunterlagen")
-			print("materialsDE")
-			found_materials = True
-		if course_raw_info.find("Go to Course Materials") != -1:
-			pos_LU = course_raw_info.find("Go to Course Materials")
-			print("materialsEN")
-			found_materials = True
+			# refetch the page (to get the correct year data)
+			#course_raw_info = self.fetch_page(driver, URL)
 
+			i_stop += 1
+			if i_stop > 4:
+				break
+
+			# get both languages
+			for i in range(0, 2):
+				self.switch_language(driver)
+				#print(self.language)
+				print("i: " + str(i) + "  |  set language: " + self.language)
+
+				course_raw_info = self.fetch_page(driver, URL)
+
+				# check if materials are available for download
+				found_materials = False
+
+				if course_raw_info.find("Zu den Lehrunterlagen") != -1 and i == 0:
+					#pos_LU = course_raw_info.find("Zu den Lehrunterlagen")
+					print("materialsDE")
+					semester_list[selected_semester] =("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
+				str(course_number_URL) + "&semester=" + selected_semester)
+					found_materials = True
+				if course_raw_info.find("Go to Course Materials") != -1 and i == 0:
+					#pos_LU = course_raw_info.find("Go to Course Materials")
+					print("materialsEN")
+					semester_list[selected_semester] =("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
+				str(course_number_URL) + "&semester=" + selected_semester)
+					found_materials = True
+
+				extract_dict = {}
+
+				## extract the data
+				extract_dict["page_fetch_lang"] = self.language
+
+				# course number and course title
+				needle1 = '<span class="light">'
+				pos1 = course_raw_info.find(needle1)
+				needle2 = "</span>"
+				pos2 = course_raw_info.find(needle2)
+				course_number = course_raw_info[pos1 + len(needle1):pos2].strip()
+				print("course nmbr: |" +  course_number + "|")
+				extract_dict["course number"] = course_number
+
+				# sanity course number check
+				if course_number_URL != course_number.replace('.', ''):
+					warnings.warn("Error mismatching course numbers: " +
+						course_number.replace('.', '') + " and " + course_number_URL)
+
+				course_raw_info = course_raw_info[pos2 + len(needle2):]
+				#print(course_raw_info)
+
+				needle3 = "<"
+				pos3 = course_raw_info.find(needle3)
+				course_title = course_raw_info[:pos3].strip()
+				print("course title: |" + course_title + "|")
+				extract_dict["course title"] = course_title
+
+				# quickinfo
+				needle4 = '<div id="subHeader" class="clearfix">'
+				pos4 = course_raw_info.find(needle4)
+				needle5 = "</div>"
+				pos5 = course_raw_info.find(needle5)
+				quickinfo = course_raw_info[pos4 + len(needle4):pos5].strip()
+				print("quickinfo: |" + quickinfo + "|")
+
+				quickinfo_split = quickinfo.split(',')
+				extract_dict["semester"] = quickinfo_split[0].strip()
+				extract_dict["type"] = quickinfo_split[1].strip()
+				extract_dict["sws"] = quickinfo_split[2].strip()
+				extract_dict["ECTS"] = quickinfo_split[3].strip()
+				# quickinfo examples:
+				# 2014W, PR, 3.0h, 3.0EC, to be held in blocked form
+				# 2015W, UE, 1.0h, 2.0EC
+				# the last entry is optional
+				if len(quickinfo_split) > 4:
+					extract_dict["add_info"] = quickinfo_split[4].strip()
+
+				# "h2-extraction" - each information is separated by an h2 element
+				needle6 = "<h2>"
+
+				i = 0
+
+				# certain sections may be present multiple times in the page. Therefore, count
+				# how many times they are present and add the integer count to the dict index.
+				count_entry_dict = {}
+				count_entry_dict["Additional information"] = 0
+				count_entry_dict["Weitere Informationen"] = 0
+
+				# language dict so that en and de versions have the same index in
+				# the returned dict.
+				index_dict_en = {
+					"Properties": "Merkmale",
+					"Learning outcomes": "Lernergebnisse",
+					"Additional information": "Weitere Informationen",
+					"Subject of course": "Inhalt der Lehrveranstaltung",
+					"Teaching methods": "Methoden",
+					"Mode of examination": "Prüfungsmodus",
+					"Examination modalities": "Leistungsnachweis",
+					"Course registration": "LVA-Anmeldung",
+					"Literature": "Literatur",
+					"Previous knowledge": "Vorkenntnisse",
+					"Preceding courses": "Vorausgehende Lehrveranstaltungen",
+					"Lecturers": "Vortragende Personen",
+					"Language": "Sprache",
+					"Institute": "Institut",
+					"Group dates": "Gruppentermine",
+					"Exams": "Prüfungen",
+					"Group Registration": "Gruppen-Anmeldung",
+					"Course dates": "LVA Termine",
+					"Curricula": "Curricula"
+				}
+
+				while course_raw_info.find(needle6) != -1:
+					pos6 = course_raw_info.find(needle6)
+					course_raw_info = course_raw_info[pos6 + len(needle6):]
+
+					print(str(i) + "########################################")
+
+					if course_raw_info.find(needle6) != -1:
+						pos7 = course_raw_info.find(needle6)
+						extract_info = course_raw_info[:pos7]
+					else:
+						extract_info = course_raw_info
+
+					#header
+					header_needle = "</h2>"
+					header_pos = extract_info.find(header_needle)
+					header_titletext = extract_info[:header_pos]
+
+					print(header_titletext + ":")
+
+					extract_info = extract_info[header_pos + len(header_needle):]
+
+					# html cleanup
+					extract_info = extract_info.replace(' class="encode"', '')
+					extract_info = extract_info.replace(' class="bulletList"', '')
+
+					if self.language == "en":
+						print("Searching for in dict: " + header_titletext)
+						if header_titletext in index_dict_en:
+							header_titletext = index_dict_en[header_titletext]
+							print("MUHFIOUND")
+						else:
+							warnings.warn("Error key is missing: " + header_titletext)
+
+					if header_titletext == "Merkmale":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Lernergebnisse":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Inhalt der Lehrveranstaltung":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Methoden":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Prüfungsmodus":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Leistungsnachweis":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "LVA-Anmeldung":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Literatur":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Vorkenntnisse":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Vorausgehende Lehrveranstaltungen":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+
+					if header_titletext == "Vortragende Personen":
+						extract_dict[header_titletext] = self.extract_course_info_lecturers(extract_info)
+						extract_info = ""
+
+					add_info_flag = False
+					if header_titletext == "Weitere Informationen":
+						add_info_flag = True
+						past_entries = count_entry_dict["Weitere Informationen"]
+
+						extract_dict[header_titletext + str(past_entries)] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+						count_entry_dict["Weitere Informationen"] += 1
+
+					if header_titletext == "Sprache":
+						cut_str = '<input type="hidden" name='
+						cut_pos = extract_info.find(cut_str)
+						extract_dict[header_titletext] = extract_info[:cut_pos]
+						extract_info = ""
+
+					if header_titletext == "Curricula":
+						extract_dict[header_titletext] = self.extract_course_info_curricula(extract_info)
+						extract_info = ""
+
+					if header_titletext == "Institut":
+						needle = '<li><a href='
+						pos1 = extract_info.find(needle)
+						extract_info = extract_info[pos1 + len(needle):]
+						extract_info = extract_info[extract_info.find('>') + 1:]
+						extract_dict[header_titletext] = extract_info[:extract_info.find('<')].replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Gruppentermine":
+						#TODO: extract this information
+						course_exams_info = ""
+						#extract_info = ""
+
+					if header_titletext == "Prüfungen":
+						#TODO: extract this information
+						course_exams_info = ""
+						extract_info = ""
+
+					if header_titletext == "Gruppen-Anmeldung":
+						#TODO: extract this information
+						course_exams_info = ""
+						extract_info = ""
+
+					if header_titletext == "LVA Termine":
+						#TODO: extract this information
+						course_coursedate_info = ""
+						extract_info = ""
+
+					if extract_info != "":
+						warnings.warn("Error processing course description (unkown field) " + header_titletext)
+
+					i += 1
+
+					if i > 100:
+						break
+
+				return_info_dict[selected_semester + self.language] = extract_dict
+
+		print("\n\nsemester download links: ")
+		print(semester_list)
+
+		print("\n\nreturn_info_dict: ")
+		print(*return_info_dict.items(), sep='\n\n')
+
+
+
+
+		exit()
+
+		## download files
 		semester_set = "2013W"
 
 		# materials found -> download them
@@ -356,7 +613,7 @@ class crawler:
 
 		#self.webdriver.execute_script("arguments[0].click();", export_button)
 
-		m = 0
+		i_amount_downloads = 0
 		str_download_needle = 'onclick="'
 
 		while download_source_raw.find(str_download_needle) != -1:
@@ -370,246 +627,22 @@ class crawler:
 			download_link = download_source_extract[:download_source_extract.find('"')]
 			driver.execute_script(download_link)
 
-			m += 1
+			i_amount_downloads += 1
 
-		exit()
+		# wait for downloads to finish
 
+		# set download folder
+		path = self.dowload_path_root + course_number_URL
 
+		#print("path: " + path)
 
+		#if not os.path.isdir(path):
+			#print("path " + path + " does not exit - create folder")
+			#os.mkdir(path)
+		#else:
+			#print("path " + path + " exits")
 
-		#LANGUAGE TESTING
-		#self.switch_language(driver)
-		#course_raw_info = self.fetch_page(driver, URL)
-
-		# determine/set the language (ger/en)
-		if not self.language:
-			self.language = self.get_language(driver)
-
-		extract_dict["page_fetch_lang"] = self.language
-
-		# course number and course title
-		needle1 = '<span class="light">'
-		pos1 = course_raw_info.find(needle1)
-		needle2 = "</span>"
-		pos2 = course_raw_info.find(needle2)
-		course_number = course_raw_info[pos1 + len(needle1):pos2].strip()
-		print("course nmbr: |" +  course_number + "|")
-		extract_dict["course number"] = course_number
-
-		# sanity course number check
-		if course_number_URL != course_number.replace('.', ''):
-			warnings.warn("Error mismatching course numbers: " +
-				 course_number.replace('.', '') + " and " + course_number_URL)
-
-		course_raw_info = course_raw_info[pos2 + len(needle2):]
-		#print(course_raw_info)
-
-		needle3 = "<"
-		pos3 = course_raw_info.find(needle3)
-		course_title = course_raw_info[:pos3].strip()
-		print("course title: |" + course_title + "|")
-		extract_dict["course title"] = course_title
-
-		# quickinfo
-		needle4 = '<div id="subHeader" class="clearfix">'
-		pos4 = course_raw_info.find(needle4)
-		needle5 = "</div>"
-		pos5 = course_raw_info.find(needle5)
-		quickinfo = course_raw_info[pos4 + len(needle4):pos5].strip()
-		print("quickinfo: |" + quickinfo + "|")
-
-		quickinfo_split = quickinfo.split(',')
-		extract_dict["semester"] = quickinfo_split[0].strip()
-		extract_dict["type"] = quickinfo_split[1].strip()
-		extract_dict["sws"] = quickinfo_split[2].strip()
-		extract_dict["ECTS"] = quickinfo_split[3].strip()
-		extract_dict["add_info"] = quickinfo_split[4].strip()
-
-		# "h2-extraction" - each information is separated by an h2 element
-		needle6 = "<h2>"
-
-		i = 0
-
-		# certain sections may be present multiple times in the page. Therefore, count
-		# how many times they are present and add the integer count to the dict index.
-		count_entry_dict = {}
-		count_entry_dict["Additional information"] = 0
-		count_entry_dict["Weitere Informationen"] = 0
-
-		# language dict so that en and de versions have the same index in
-		# the returned dict.
-		index_dict_en = {
-			"Properties": "Merkmale",
-			"Learning outcomes": "Lernergebnisse",
-			"Additional information": "Weitere Informationen",
-			"Subject of course": "Inhalt der Lehrveranstaltung",
-			"Teaching methods": "Methoden",
-			"Mode of examination": "Prüfungsmodus",
-			"Examination modalities": "Leistungsnachweis",
-			"Course registration": "LVA-Anmeldung",
-			"Literature": "Literatur",
-			"Previous knowledge": "Vorkenntnisse",
-			"Preceding courses": "Vorausgehende Lehrveranstaltungen",
-			"Lecturers": "Vortragende Personen",
-			"Language": "Sprache",
-			"Institute": "Institut",
-			"Group dates": "Gruppentermine",
-			"Exams": "Prüfungen",
-			"Group Registration": "Gruppen-Anmeldung",
-			"Course dates": "LVA Termine",
-			"Curricula": "Curricula"
-		}
-
-		while course_raw_info.find(needle6) != -1:
-			pos6 = course_raw_info.find(needle6)
-			course_raw_info = course_raw_info[pos6 + len(needle6):]
-
-			print(str(i) + "########################################")
-
-			if course_raw_info.find(needle6) != -1:
-				pos7 = course_raw_info.find(needle6)
-				extract_info = course_raw_info[:pos7]
-			else:
-				extract_info = course_raw_info
-
-			#header
-			header_needle = "</h2>"
-			header_pos = extract_info.find(header_needle)
-			header_titletext = extract_info[:header_pos]
-
-			print(header_titletext + ":")
-
-			extract_info = extract_info[header_pos + len(header_needle):]
-
-			# html cleanup
-			extract_info = extract_info.replace(' class="encode"', '')
-			extract_info = extract_info.replace(' class="bulletList"', '')
-
-			if self.language == "en":
-				print("Searching for in dict: " + header_titletext)
-				if header_titletext in index_dict_en:
-					header_titletext = index_dict_en[header_titletext]
-					print("MUHFIOUND")
-				else:
-					warnings.warn("Error key is missing: " + header_titletext)
-
-			if header_titletext == "Merkmale":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Lernergebnisse":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Inhalt der Lehrveranstaltung":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Methoden":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Prüfungsmodus":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Leistungsnachweis":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "LVA-Anmeldung":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Literatur":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Vorkenntnisse":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Vorausgehende Lehrveranstaltungen":
-				extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-
-
-			if header_titletext == "Vortragende Personen":
-				extract_dict[header_titletext] = self.extract_course_info_lecturers(extract_info)
-				extract_info = ""
-
-			add_info_flag = False
-			if header_titletext == "Weitere Informationen":
-				add_info_flag = True
-				past_entries = count_entry_dict["Weitere Informationen"]
-
-				extract_dict[header_titletext + str(past_entries)] = extract_info.replace('\n', '').strip()
-				extract_info = ""
-				count_entry_dict["Weitere Informationen"] += 1
-
-			if header_titletext == "Sprache":
-				cut_str = '<input type="hidden" name='
-				cut_pos = extract_info.find(cut_str)
-				extract_dict[header_titletext] = extract_info[:cut_pos]
-				extract_info = ""
-
-			if header_titletext == "Curricula":
-				extract_dict[header_titletext] = self.extract_course_info_curricula(extract_info)
-				extract_info = ""
-
-			if header_titletext == "Institut":
-				needle = '<li><a href='
-				pos1 = extract_info.find(needle)
-				extract_info = extract_info[pos1 + len(needle):]
-				extract_info = extract_info[extract_info.find('>') + 1:]
-				extract_dict[header_titletext] = extract_info[:extract_info.find('<')].replace('\n', '').strip()
-				extract_info = ""
-
-			if header_titletext == "Gruppentermine":
-				#TODO: extract this information
-				course_exams_info = ""
-				#extract_info = ""
-
-			if header_titletext == "Prüfungen":
-				#TODO: extract this information
-				course_exams_info = ""
-				extract_info = ""
-
-			if header_titletext == "Gruppen-Anmeldung":
-				#TODO: extract this information
-				course_exams_info = ""
-				extract_info = ""
-
-			if header_titletext == "LVA Termine":
-				#TODO: extract this information
-				course_coursedate_info = ""
-				extract_info = ""
-
-			if extract_info != "":
-				warnings.warn("Error processing course description (unkown field) " + header_titletext)
-
-			i += 1
-
-			if i > 100:
-				break
-
-		print("\n\n")
-		print(*extract_dict.items(), sep='\n\n')
-
-		print("\n\n")
-		print(extract_dict)
-
-		stacked_dict = {}
-		stacked_dict["test123"] = extract_dict
-		stacked_dict["test456"] = extract_dict
-
-		print("\n\n")
-		print(stacked_dict)
-
-		print("\n\n")
-		print(stacked_dict["test123"]["Curricula"])
-		print("\n\n")
-		print(stacked_dict["test123"]["Curricula"][1])
+		#.crdownloads
 
 	def extract_course_info_lecturers(self, extract_info):
 		cutstr1 = '<span>'
