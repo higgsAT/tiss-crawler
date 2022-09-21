@@ -50,7 +50,7 @@ class crawler:
 		chrome_options.add_argument("--no-sandbox") # linux only
 		#chrome_options.add_experimental_option("detach", True)
 		chrome_options.add_experimental_option("prefs", {
-			"download.default_directory": r"/home/itsme/Desktop/git_repos/tiss-crawler",
+			"download.default_directory": r"/home/itsme/Desktop/git_repos/tiss-crawler/a",
 			"download.prompt_for_download": False,
 			"download.directory_upgrade": True,
 			"safebrowsing.enabled": True,
@@ -325,7 +325,7 @@ class crawler:
 		select.select_by_visible_text(muh)
 		time.sleep(3*self.sleeptime_fetchpage)
 		select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
-		select.select_by_visible_text("2015W")
+		select.select_by_visible_text("2013W")
 		time.sleep(3*self.sleeptime_fetchpage)
 
 		# refetch the page (to get the correct year data)
@@ -344,7 +344,7 @@ class crawler:
 			print("materialsEN")
 			found_materials = True
 
-		semester_set = "2015W"
+		semester_set = "2013W"
 
 		# materials found -> download them
 		if found_materials == True:
