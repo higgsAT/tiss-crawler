@@ -5,7 +5,14 @@ import crawl
 import time
 import sqlhandler
 from sys import exit
-#from time import sleep
+import pylogs
+
+
+
+logging = pylogs.logs("logs/", "testlog")
+
+
+exit()
 
 # crawling events testing
 driver_instance = crawl.crawler(False, 800, 600, 5)
@@ -58,8 +65,8 @@ extracted_course_URLs = driver_instance.extract_courses(driver, acad_program_lis
 #URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=138017"
 #URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=389158"
 #URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=253J14"
-URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=103064" #linalg
-#URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=136019" #Q1
+#URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=103064" #linalg
+URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=136019" #Q1
 
 
 driver_instance.extract_course_info(driver, URL, True)

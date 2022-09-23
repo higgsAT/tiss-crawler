@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import Select
 import time
 import warnings
 import os
+import random
 
 # TISS login credentials
 from config import *
@@ -696,6 +697,7 @@ class crawler:
 
 							download_link = download_source_extract[:download_source_extract.find('"')]
 							driver.execute_script(download_link)
+							time.sleep(random.uniform(0.25, 2.0))
 
 							i_amount_downloads += 1
 
