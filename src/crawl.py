@@ -34,7 +34,9 @@ class crawler:
 		self.language = ""									# set language (de/en) used by extract_course_info(...)
 		self.crawl_delay = 5.0								# crawl delay in seconds
 		self.last_crawltime = time.time()					# last time a page has been fetched (t_init = t_start)
-		self.dowload_path_root = "/home/itsme/Desktop/git_repos/tiss-crawler/downloads/temp/"
+		self.download_path_root = "/home/itsme/Desktop/git_repos/tiss-crawler/downloads/"
+		self.download_path_temp = "temp/"
+		self.logged_in = False								# login-state changed by self.tiss_login(...)
 
 	def init_driver(self):
 		"""Initiate the webdriver (as defined by the user).
@@ -52,7 +54,7 @@ class crawler:
 		chrome_options.add_argument("--no-sandbox") # linux only
 		#chrome_options.add_experimental_option("detach", True)
 		chrome_options.add_experimental_option("prefs", {
-			"download.default_directory": self.dowload_path_root,
+			"download.default_directory": self.download_path_root + self.download_path_temp,
 			"download.prompt_for_download": False,
 			"download.directory_upgrade": True,
 			"safebrowsing.enabled": True,
@@ -113,6 +115,7 @@ class crawler:
 			print("login failed")
 		else:
 			print("login successful")
+			self.logged_in = True
 
 	def get_language(self, driver):
 		"""Function to retrieve the set language.
@@ -289,10 +292,11 @@ class crawler:
 
 		return extracted_course_URLs
 
-	def extract_course_info(self, driver, URL):
+	def extract_course_info(self, driver, URL, download_files = False):
 		"""Process a single course and extract relevenat information.
 		"""
 
+		"""
 		# determine/set the language (ger/en)
 		if not self.language:
 			self.language = self.get_language(driver)
@@ -419,11 +423,6 @@ class crawler:
 				if len(quickinfo_split) > 4:
 					extract_dict["add_info"] = quickinfo_split[4].strip()
 
-				# "h2-extraction" - each information is separated by an h2 element
-				needle6 = "<h2>"
-
-				i = 0
-
 				# certain sections may be present multiple times in the page. Therefore, count
 				# how many times they are present and add the integer count to the dict index.
 				count_entry_dict = {}
@@ -453,6 +452,11 @@ class crawler:
 					"Course dates": "LVA Termine",
 					"Curricula": "Curricula"
 				}
+
+				# "<h2>-extraction" - each information is separated by an h2 element
+				needle6 = "<h2>"
+
+				i = 0
 
 				while course_raw_info.find(needle6) != -1:
 					pos6 = course_raw_info.find(needle6)
@@ -594,13 +598,199 @@ class crawler:
 
 		print("\n\nreturn_info_dict: ")
 		print(*return_info_dict.items(), sep='\n\n')
+		"""
+
+		## download files
+		# only proceed if the user is logged in at the moment because
+		# otherwise there are no downloads available.
+		"""
+		if not self.logged_in:
+			print("not logged in -> loggin in")
+			self.tiss_login(driver)
+		else:
+			print("logged in")
+		"""
 
 
+
+
+		course_number_URL = "103064"
+		semester_list = {'2022W': '', '2021W': 'https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=103064&semester=2021W', '2020W': 'https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=103064&semester=2020W', '2019W': 'https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=103064&semester=2019W', '2018W': '', '2017W': '', '2016W': '', '2015W': '', '2014W': '', '2013W': '', '2012W': '', '2011W': '', '2010W': '', '2008W': '', '2006W': '', '2004W': '', '2002W': ''}
+		self.logged_in = True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		download_temp_path = self.download_path_root + self.download_path_temp
+		download_move_path_courseNr = self.download_path_root + course_number_URL + "/"
+		download_move_path_semester = download_move_path_courseNr + "2019W" + "/"
+
+		print("download_temp_path: " + download_temp_path)
+		print("download_move_path_courseNr: " + download_move_path_courseNr)
+		print("download_move_path_semester: " + download_move_path_semester)
+
+		i_amount_downloads = 12
+
+		###############################################################
+		###############################################################
+		###############################################################
+
+		download_first_iteration = True
+		downloads_finished = False
+		i_downloads = 0
+		time_download_start = time.time()
+		time_abort = 300
+
+		# fetch all files in the /temp folder and check, whether the file ending
+		# is ".crdownloads". All these files are being downloaded at the moment.
+		# Check the file size difference after a certain amount of time.
+		while downloads_finished == False:
+			print("iteration number: " + str(i_downloads))
+
+			amt_finished_dwnload = 0
+			amt_not_finished_dwnload = 0
+			#max_filesize_found = 0
+
+			for entry in os.scandir(download_temp_path):
+				if entry.is_file():
+					if entry.name[-11:] == ".crdownload":
+						print("   path: " + download_temp_path + entry.name + " -> size: " + str(os.path.getsize(download_temp_path + entry.name)/1000 ))
+						amt_not_finished_dwnload += 1
+						#max_filesize_found = max(max_filesize_found, os.path.getsize(download_temp_path + entry.name))
+					else:
+						amt_finished_dwnload += 1
+
+			if amt_not_finished_dwnload == 0:
+				downloads_finished = True
+
+			# download takes too long -> abort
+			delta_t = time.time() - time_download_start
+			if delta_t > time_abort:
+				break
+
+			#print("max filesize: " + str(max_filesize_found/(1000*1000)))
+			time.sleep(1)
+			i_downloads += 1
+
+		print("amt_finished_dwnload: " + str(amt_finished_dwnload))
+		print("amt_not_finished_dwnload: " + str(amt_not_finished_dwnload))
+		print("downloads_finished: " + str(downloads_finished))
+
+		# download successful -> move files to final location
+		if downloads_finished == True and i_amount_downloads > 0 and amt_finished_dwnload > 0:
+			if amt_finished_dwnload == i_amount_downloads:
+				for entry in os.scandir(download_temp_path):
+					if entry.is_file():
+						print("move file: " + download_temp_path + entry.name + " into: " + download_move_path_semester + entry.name)
+						if os.path.isdir(download_move_path_semester):
+							os.rename(download_temp_path + entry.name, download_move_path_semester + entry.name)
+						else:
+							print("path: " + download_move_path_semester + " does not exits")
+			else:
+				print("Amount of queued files and amount of downloaded files differs!")
+				print("#Queued files: " + str(i_amount_downloads))
+				print("#Downloaded files: " + str(amt_finished_dwnload))
+		# download failed -> clear temp folder of files
+		else:
+			for entry in os.scandir(download_temp_path):
+				if entry.is_file():
+					print("del: " + entry.name)
+					os.remove(download_temp_path + entry.name)
+
+			i_empty_check = 0
+			for entry in os.scandir(download_temp_path):
+				if entry.is_file():
+					i_empty_check += 1
+
+			if i_empty_check > 0:
+				print("Error: folder " + download_temp_path + "not empty")
+
+		###############################################################
+		###############################################################
+		###############################################################
 
 
 		exit()
 
-		## download files
+
+		if self.logged_in == True and course_number_URL != "" and download_files == True:
+			print("course number: " + course_number_URL)
+
+			semester_list_key_dict = list(dict.fromkeys(semester_list)) 
+			for i in range(len(semester_list_key_dict)):
+				materials_download_link = semester_list[semester_list_key_dict[i]]
+				if materials_download_link != "":
+					print("semester: " + semester_list_key_dict[i] + " -> " + "download url: " + materials_download_link)
+
+					download_temp_path = self.download_path_root + self.download_path_temp
+					download_move_path_courseNr = self.download_path_root + course_number_URL + "/"
+					download_move_path_semester = download_move_path_courseNr + semester_list_key_dict[i] + "/"
+
+					print("download_temp_path: " + download_temp_path)
+					print("download_move_path_courseNr: " + download_move_path_courseNr)
+					print("download_move_path_semester: " + download_move_path_semester)
+
+					# check if folder exists
+					if not os.path.isdir(download_move_path_courseNr):
+						print("path " + download_move_path_courseNr + " does not exit - create folder")
+						os.mkdir(download_move_path_courseNr)
+					else:
+						print("path " + download_move_path_courseNr + " exits")
+
+					if not os.path.isdir(download_move_path_semester):
+						print("path " + download_move_path_semester + " does not exit - create folder")
+						os.mkdir(download_move_path_semester)
+					else:
+						print("path " + download_move_path_semester + " exits")
+
+					#double check, whether folder creation was successful
+					if not os.path.isdir(download_move_path_courseNr) or not os.path.isdir(download_move_path_semester):
+						print("something went wrong with creating folders")
+						warnings.warn("Error creating folders: " +
+						download_move_path_courseNr + " or " + download_move_path_semester)
+					else:
+						# queue the files to download
+						download_source_raw = self.fetch_page(driver, materials_download_link)
+						i_amount_downloads = 0
+						str_download_needle = 'onclick="'
+
+						while download_source_raw.find(str_download_needle) != -1:
+							download_source_raw = download_source_raw[download_source_raw.find(str_download_needle) + len(str_download_needle):]
+							download_source_extract = download_source_raw[:download_source_raw.find('ui-widget"')]
+
+							if (download_source_extract.find("Download all files as ZIP-File") != -1 or
+								download_source_extract.find("Alle Dateien als ZIP-Datei herunterladen") != -1):
+								break
+
+							download_link = download_source_extract[:download_source_extract.find('"')]
+							driver.execute_script(download_link)
+
+							i_amount_downloads += 1
+
+						print("Downloads queued: " + str(i_amount_downloads))
+
+						## wait for downloads to finish (and move them afterwards):
+						# count the downloads in the *temp/-folder. When All downloads are
+						# finished (no file with *.crdownload ending), move them to the final location.
+
+
+		else:
+			print("Not downloading files -> self.logged_in: " + str(self.logged_in) +
+				"; course_number_URL: " + course_number_URL + "; download_files: " +
+				str(download_files)
+			)
+
+		"""
 		semester_set = "2013W"
 
 		# materials found -> download them
@@ -632,7 +822,7 @@ class crawler:
 		# wait for downloads to finish
 
 		# set download folder
-		path = self.dowload_path_root + course_number_URL
+		path = self.download_path_root + course_number_URL
 
 		#print("path: " + path)
 
@@ -643,6 +833,8 @@ class crawler:
 			#print("path " + path + " exits")
 
 		#.crdownloads
+		"""
+
 
 	def extract_course_info_lecturers(self, extract_info):
 		cutstr1 = '<span>'
