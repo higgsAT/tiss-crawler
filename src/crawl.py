@@ -93,7 +93,7 @@ class crawler:
 		# head to the login page
 		URLlogin = "https://idp.zid.tuwien.ac.at/simplesaml/module.php/core/loginuserpass.php?AuthState=_1d7ffb3e1f13ab208155e8e359ef5ce8b081b6202f%3Ahttps%3A%2F%2Fidp.zid.tuwien.ac.at%2Fsimplesaml%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fauth%26RelayState%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fportal%26cookieTime%3D1654809688"
 
-		self.get_page(driver, URLlogin)
+		self.fetch_page(driver, URLlogin)
 
 		# find username/password field and send the info the input fields
 		driver.find_element_by_id("username").send_keys(TissUsername)
@@ -104,10 +104,10 @@ class crawler:
 
 		# load this page (else the login won't work correctly)
 		page_to_fetch = "https://login.tuwien.ac.at/AuthServ/AuthServ.authenticate?app=76"
-		self.get_page(driver, page_to_fetch)
+		self.fetch_page(driver, page_to_fetch)
 
 		# verify the login (search for logout string in the page source)
-		self.get_page(driver, "https://tiss.tuwien.ac.at")
+		self.fetch_page(driver, "https://tiss.tuwien.ac.at")
 		search_logout = driver.page_source.find("/admin/authentifizierung/logout")
 		#login_page_source = self.fetch_page(driver, page_to_fetch)
 
@@ -123,12 +123,24 @@ class crawler:
 		This function determines from the page source
 		which language is set at the moment.
 		"""
-		language_en_find = driver.page_source.find("language_en")
-		language_de_find = driver.page_source.find("language_de")
 
-		if (language_en_find != -1):
+		# if the user initiates the driver and calls this function
+		# immediately, no page is loaded and this if statement returns true
+		if driver.page_source == "<html><head></head><body></body></html>":
+			print("no previous page loaded")
+			# load the default (tiss)page to determine the language
+			self.fetch_page(driver, "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml")
+
+		# different needles for different pages
+		language_en_find = driver.page_source.find("language_en")
+		language_en_find2 = driver.page_source.find('<a href="/?locale=en">English</a>')
+
+		language_de_find = driver.page_source.find("language_de")
+		language_de_find2 = driver.page_source.find('<a href="/?locale=de">Deutsch</a>')
+
+		if (language_en_find != -1 or language_en_find != -1):
 			language = "de"
-		elif (language_de_find != -1):
+		elif (language_de_find != -1 or language_de_find2 != -1):
 			language = "en"
 		else:
 			# increase wait time to ensure page loading!
@@ -296,7 +308,6 @@ class crawler:
 		"""Process a single course and extract relevenat information.
 		"""
 
-		"""
 		# determine/set the language (ger/en)
 		if not self.language:
 			self.language = self.get_language(driver)
@@ -353,8 +364,12 @@ class crawler:
 
 			# get both languages
 			for i in range(0, 2):
-				self.switch_language(driver)
-				#print(self.language)
+				# always start with the same language (download folder name)
+				if i == 0 and self.language != "de":
+					self.switch_language(driver)
+				else:
+					self.switch_language(driver)
+
 				print("i: " + str(i) + "  |  set language: " + self.language)
 
 				course_raw_info = self.fetch_page(driver, URL)
@@ -609,122 +624,10 @@ class crawler:
 			self.tiss_login(driver)
 		else:
 			print("logged in")
-		"""
-
-
-
-
-		course_number_URL = "103064"
-		semester_list = {'2022W': '', '2021W': 'https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=103064&semester=2021W', '2020W': 'https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=103064&semester=2020W', '2019W': 'https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=103064&semester=2019W', '2018W': '', '2017W': '', '2016W': '', '2015W': '', '2014W': '', '2013W': '', '2012W': '', '2011W': '', '2010W': '', '2008W': '', '2006W': '', '2004W': '', '2002W': ''}
-		self.logged_in = True
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		download_temp_path = self.download_path_root + self.download_path_temp
-		download_move_path_courseNr = self.download_path_root + course_number_URL + "/"
-		download_move_path_semester = download_move_path_courseNr + "2019W" + "/"
-
-		print("download_temp_path: " + download_temp_path)
-		print("download_move_path_courseNr: " + download_move_path_courseNr)
-		print("download_move_path_semester: " + download_move_path_semester)
-
-		i_amount_downloads = 12
-
-		###############################################################
-		###############################################################
-		###############################################################
-
-		download_first_iteration = True
-		downloads_finished = False
-		i_downloads = 0
-		time_download_start = time.time()
-		time_abort = 300
-
-		# fetch all files in the /temp folder and check, whether the file ending
-		# is ".crdownloads". All these files are being downloaded at the moment.
-		# Check the file size difference after a certain amount of time.
-		while downloads_finished == False:
-			print("iteration number: " + str(i_downloads))
-
-			amt_finished_dwnload = 0
-			amt_not_finished_dwnload = 0
-			#max_filesize_found = 0
-
-			for entry in os.scandir(download_temp_path):
-				if entry.is_file():
-					if entry.name[-11:] == ".crdownload":
-						print("   path: " + download_temp_path + entry.name + " -> size: " + str(os.path.getsize(download_temp_path + entry.name)/1000 ))
-						amt_not_finished_dwnload += 1
-						#max_filesize_found = max(max_filesize_found, os.path.getsize(download_temp_path + entry.name))
-					else:
-						amt_finished_dwnload += 1
-
-			if amt_not_finished_dwnload == 0:
-				downloads_finished = True
-
-			# download takes too long -> abort
-			delta_t = time.time() - time_download_start
-			if delta_t > time_abort:
-				break
-
-			#print("max filesize: " + str(max_filesize_found/(1000*1000)))
-			time.sleep(1)
-			i_downloads += 1
-
-		print("amt_finished_dwnload: " + str(amt_finished_dwnload))
-		print("amt_not_finished_dwnload: " + str(amt_not_finished_dwnload))
-		print("downloads_finished: " + str(downloads_finished))
-
-		# download successful -> move files to final location
-		if downloads_finished == True and i_amount_downloads > 0 and amt_finished_dwnload > 0:
-			if amt_finished_dwnload == i_amount_downloads:
-				for entry in os.scandir(download_temp_path):
-					if entry.is_file():
-						print("move file: " + download_temp_path + entry.name + " into: " + download_move_path_semester + entry.name)
-						if os.path.isdir(download_move_path_semester):
-							os.rename(download_temp_path + entry.name, download_move_path_semester + entry.name)
-						else:
-							print("path: " + download_move_path_semester + " does not exits")
-			else:
-				print("Amount of queued files and amount of downloaded files differs!")
-				print("#Queued files: " + str(i_amount_downloads))
-				print("#Downloaded files: " + str(amt_finished_dwnload))
-		# download failed -> clear temp folder of files
-		else:
-			for entry in os.scandir(download_temp_path):
-				if entry.is_file():
-					print("del: " + entry.name)
-					os.remove(download_temp_path + entry.name)
-
-			i_empty_check = 0
-			for entry in os.scandir(download_temp_path):
-				if entry.is_file():
-					i_empty_check += 1
-
-			if i_empty_check > 0:
-				print("Error: folder " + download_temp_path + "not empty")
-
-		###############################################################
-		###############################################################
-		###############################################################
-
-
-		exit()
-
 
 		if self.logged_in == True and course_number_URL != "" and download_files == True:
 			print("course number: " + course_number_URL)
+			print("course title: " + course_title)
 
 			semester_list_key_dict = list(dict.fromkeys(semester_list)) 
 			for i in range(len(semester_list_key_dict)):
@@ -733,7 +636,7 @@ class crawler:
 					print("semester: " + semester_list_key_dict[i] + " -> " + "download url: " + materials_download_link)
 
 					download_temp_path = self.download_path_root + self.download_path_temp
-					download_move_path_courseNr = self.download_path_root + course_number_URL + "/"
+					download_move_path_courseNr = self.download_path_root + course_number_URL + " " + course_title + "/"
 					download_move_path_semester = download_move_path_courseNr + semester_list_key_dict[i] + "/"
 
 					print("download_temp_path: " + download_temp_path)
@@ -782,8 +685,76 @@ class crawler:
 						## wait for downloads to finish (and move them afterwards):
 						# count the downloads in the *temp/-folder. When All downloads are
 						# finished (no file with *.crdownload ending), move them to the final location.
+						download_first_iteration = True
+						downloads_finished = False
+						i_downloads = 0
+						time_download_start = time.time()
+						time_abort = 300
 
+						# fetch all files in the /temp folder and check, whether the file ending
+						# is ".crdownloads". All these files are being downloaded at the moment.
+						# Check the file size difference after a certain amount of time.
+						while downloads_finished == False:
+							print("iteration number: " + str(i_downloads))
 
+							amt_finished_dwnload = 0
+							amt_not_finished_dwnload = 0
+							#max_filesize_found = 0
+
+							for entry in os.scandir(download_temp_path):
+								if entry.is_file():
+									if entry.name[-11:] == ".crdownload":
+										print("   path: " + download_temp_path + entry.name + " -> size: " + str(os.path.getsize(download_temp_path + entry.name)/1000 ))
+										amt_not_finished_dwnload += 1
+										#max_filesize_found = max(max_filesize_found, os.path.getsize(download_temp_path + entry.name))
+									else:
+										amt_finished_dwnload += 1
+
+							if amt_not_finished_dwnload == 0:
+								downloads_finished = True
+
+							# download takes too long -> abort
+							delta_t = time.time() - time_download_start
+							if delta_t > time_abort:
+								break
+
+							#print("max filesize: " + str(max_filesize_found/(1000*1000)))
+							time.sleep(1)
+							i_downloads += 1
+
+						print("amt_finished_dwnload: " + str(amt_finished_dwnload))
+						print("amt_not_finished_dwnload: " + str(amt_not_finished_dwnload))
+						print("downloads_finished: " + str(downloads_finished))
+						print("download time: " + str(delta_t))
+
+						# download successful -> move files to final location
+						if downloads_finished == True and i_amount_downloads > 0 and amt_finished_dwnload > 0:
+							if amt_finished_dwnload == i_amount_downloads:
+								for entry in os.scandir(download_temp_path):
+									if entry.is_file():
+										print("move file: " + download_temp_path + entry.name + " into: " + download_move_path_semester + entry.name)
+										if os.path.isdir(download_move_path_semester):
+											os.rename(download_temp_path + entry.name, download_move_path_semester + entry.name)
+										else:
+											print("path: " + download_move_path_semester + " does not exits")
+							else:
+								print("Amount of queued files and amount of downloaded files differs!")
+								print("#Queued files: " + str(i_amount_downloads))
+								print("#Downloaded files: " + str(amt_finished_dwnload))
+						# download failed -> clear temp folder of files
+						else:
+							for entry in os.scandir(download_temp_path):
+								if entry.is_file():
+									print("del: " + entry.name)
+									os.remove(download_temp_path + entry.name)
+
+							i_empty_check = 0
+							for entry in os.scandir(download_temp_path):
+								if entry.is_file():
+									i_empty_check += 1
+
+							if i_empty_check > 0:
+								print("Error: folder " + download_temp_path + "not empty")
 		else:
 			print("Not downloading files -> self.logged_in: " + str(self.logged_in) +
 				"; course_number_URL: " + course_number_URL + "; download_files: " +
