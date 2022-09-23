@@ -93,7 +93,7 @@ class crawler:
 		# head to the login page
 		URLlogin = "https://idp.zid.tuwien.ac.at/simplesaml/module.php/core/loginuserpass.php?AuthState=_1d7ffb3e1f13ab208155e8e359ef5ce8b081b6202f%3Ahttps%3A%2F%2Fidp.zid.tuwien.ac.at%2Fsimplesaml%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fauth%26RelayState%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fportal%26cookieTime%3D1654809688"
 
-		self.fetch_page(driver, URLlogin)
+		self.get_page(driver, URLlogin)
 
 		# find username/password field and send the info the input fields
 		driver.find_element_by_id("username").send_keys(TissUsername)
@@ -390,6 +390,7 @@ class crawler:
 				str(course_number_URL) + "&semester=" + selected_semester)
 					found_materials = True
 
+				# clear all data in the dict
 				extract_dict = {}
 
 				## extract the data
@@ -613,11 +614,29 @@ class crawler:
 
 		print("\n\nreturn_info_dict: ")
 		print(*return_info_dict.items(), sep='\n\n')
-		"""
 
-		## download files
-		# only proceed if the user is logged in at the moment because
-		# otherwise there are no downloads available.
+		# download files
+		self.download_course_files(driver, course_number_URL, course_title, semester_list, download_files)
+
+	def download_course_files(self, driver, course_number_URL, course_title, semester_list, download_files):
+		"""Download all files (for all semesters) corresponding to a course.
+
+		Downloads are only available when being logged in. All (available) files
+		are then downloaded into a temp folder and after downloading is finished,
+		all files are moved to its final location.
+
+		parameters:
+		.) driver: webdriver instance object
+		.) course_number_URL:	six digit course number, e.g., 103064. Used
+								for folder creation (name).
+		.) course_title:	name of the course (in german), used for folder creation
+		.) semester_list{}:	contains a dict of semesters and corresponding
+							downloadlinks, e.g., semester_list = {'2022W': '', '2021W':
+							'https://tiss.tuwien.ac.at/education/course/documents.xhtml? \
+							courseNr=103064&semester=2021W'}. Empty entries denote no
+							available downloads.
+		.)download_files:	bool which indicates whether files should be downloaded or not.
+							If set to False, no downloading will happen.
 		"""
 		if not self.logged_in:
 			print("not logged in -> loggin in")
@@ -760,53 +779,6 @@ class crawler:
 				"; course_number_URL: " + course_number_URL + "; download_files: " +
 				str(download_files)
 			)
-
-		"""
-		semester_set = "2013W"
-
-		# materials found -> download them
-		if found_materials == True:
-			materials_download_link = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
-				str(course_number_URL) + "&semester=" + semester_set)
-
-		download_source_raw = self.fetch_page(driver, materials_download_link)
-		print("\n\nDOWNLOAD SOURCE: " + download_source_raw)
-
-		#self.webdriver.execute_script("arguments[0].click();", export_button)
-
-		i_amount_downloads = 0
-		str_download_needle = 'onclick="'
-
-		while download_source_raw.find(str_download_needle) != -1:
-			download_source_raw = download_source_raw[download_source_raw.find(str_download_needle) + len(str_download_needle):]
-			download_source_extract = download_source_raw[:download_source_raw.find('ui-widget"')]
-
-			if (download_source_extract.find("Download all files as ZIP-File") != -1 or
-				download_source_extract.find("Alle Dateien als ZIP-Datei herunterladen") != -1):
-				break
-
-			download_link = download_source_extract[:download_source_extract.find('"')]
-			driver.execute_script(download_link)
-
-			i_amount_downloads += 1
-
-		# wait for downloads to finish
-
-		# set download folder
-		path = self.download_path_root + course_number_URL
-
-		#print("path: " + path)
-
-		#if not os.path.isdir(path):
-			#print("path " + path + " does not exit - create folder")
-			#os.mkdir(path)
-		#else:
-			#print("path " + path + " exits")
-
-		#.crdownloads
-		"""
-
-
 	def extract_course_info_lecturers(self, extract_info):
 		cutstr1 = '<span>'
 		cutstr2 = '</span>'
