@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/python3
 
+import os
+import random
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
 import time
 import warnings
-import os
-import random
 
 # TISS login credentials
 from config import *
@@ -237,7 +237,7 @@ class crawler:
 
 		return inner_div_content
 
-	def extract_URLs(self, driver, URL, needle):
+	def extract_academic_programs(self, driver, URL, needle):
 		"""Extract links to academic programs.
 
 		Starting from an URL, this function extracts all
@@ -250,15 +250,16 @@ class crawler:
 		fetched_page = self.fetch_page(driver, URL)
 
 		elems = driver.find_elements_by_xpath("//a[@href]")
-		found_elements = []
+		extract_academic_programs = []
 
 		for elem in elems:
 			href_element = elem.get_attribute("href")
+			href_text = elem.get_attribute("text").strip()
 			# only select links (hrefs) to academic programs:
 			if href_element.find(needle) != -1:
-				found_elements.append(href_element)
+				extract_academic_programs.append(href_element + "|" + href_text)
 
-		return found_elements
+		return extract_academic_programs
 
 	def extract_courses(self, driver, URL):
 		"""Extract courses from the (study) program.
@@ -504,7 +505,6 @@ class crawler:
 						print("Searching for in dict: " + header_titletext)
 						if header_titletext in index_dict_en:
 							header_titletext = index_dict_en[header_titletext]
-							print("MUHFIOUND")
 						else:
 							warnings.warn("Error key is missing: " + header_titletext)
 

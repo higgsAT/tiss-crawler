@@ -1,22 +1,96 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/python3
 
-import crawl
-import time
+import os
 import sqlhandler
-from sys import exit
+import time
+
+import crawl
 import pylogs
 
+# set folders / files
+logging_folder = "logs/"
+logging_academic_programs = "academic_programs.txt"
+logging_queued_courses = "queued_courses.txt"
 
+# initiate driver (instance)
+driver_instance = crawl.crawler(False, 800, 600, 5)
+driver = driver_instance.init_driver()
+
+# check the state of eventual previous crawls
+if not os.path.exists(logging_folder):
+	raise Exception('Folder "' + logging_folder + '" does not exist')
+else:
+	print('Folder "' + logging_folder + '" exists')
+
+# check (eventual queued) academic programs to crawl
+if os.path.isfile(logging_folder + logging_academic_programs):
+	# text file with (previous crawled) academic programs exists.
+	# parse this file to continue from this point onwards.
+	print('file "' + logging_folder + logging_academic_programs + '" exists')
+
+	acad_program_list = []
+	with open(logging_folder + logging_academic_programs) as file:
+		for line in file:
+			acad_program_list.append(line.rstrip())
+else:
+	# no file containing academic programs was found -> "start at zero"
+	print('file "' + logging_folder + logging_academic_programs + '" does not exist')
+
+	# fetch all available academic programs
+	academic_program_URL = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
+	acad_program_list = driver_instance.extract_academic_programs(
+		driver,
+		academic_program_URL,
+		"key"
+	)
+
+	# write the information to the corresponding file
+	f = open(logging_folder + logging_academic_programs, "w")
+	for i in range(len(acad_program_list)):
+		f.write(acad_program_list[i] + "\n")
+
+
+
+
+
+
+
+
+print(acad_program_list)
+print(len(acad_program_list))
+
+
+driver_instance.close_driver(driver)
+exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pylogs.test()
+pylogs.test()
+pylogs.test()
 
 logging = pylogs.logs("logs/", "testlog")
 
+for i in range(0, 20):
+	logging.append_to_log("MU" + str(i))
+	time.sleep(0.25)
 
 exit()
 
-# crawling events testing
-driver_instance = crawl.crawler(False, 800, 600, 5)
 
+driver_instance = crawl.crawler(False, 800, 600, 5)
 driver = driver_instance.init_driver()
 
 #driver_instance.tiss_login(driver)
@@ -50,7 +124,7 @@ print("get lang2: " + str(determine_language))
 starting_page = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
 
 # get the links to all academic programs
-acad_program_list = driver_instance.extract_URLs(driver, starting_page, "key")
+acad_program_list = driver_instance.extract_academic_programs(driver, starting_page, "key")
 print(acad_program_list)
 print(len(acad_program_list))
 
@@ -70,15 +144,6 @@ URL = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=136019" #Q1
 
 
 driver_instance.extract_course_info(driver, URL, True)
-
-"""
-
-acad_program_list = driver_instance.extract_URLs(driver, acad_program_list[25], "courseDetails")
-print (acad_program_list)
-print(len(acad_program_list))
-"""
-
-#wait = input("Press Enter to continue4.")
 
 driver_instance.close_driver(driver)
 print ('\nexiting')
