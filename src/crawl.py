@@ -619,6 +619,8 @@ class crawler:
 		# download files
 		self.download_course_files(driver, course_number_URL, course_title, semester_list, download_files)
 
+		return return_info_dict
+
 	def download_course_files(self, driver, course_number_URL, course_title, semester_list, download_files):
 		"""Download all files (for all semesters) corresponding to a course.
 
