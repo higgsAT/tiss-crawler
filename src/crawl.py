@@ -156,6 +156,9 @@ class crawler:
 		Switches the set language from EN to DE and
 		vice versa, e.g. , when the set language is
 		set to EN, this function will switch it to DE.
+
+		TODO: the link to switch languages seems to differ
+		sometimes (e.g., id="toolNavFormLang").
 		"""
 		set_language = self.get_language(driver)
 
@@ -237,29 +240,72 @@ class crawler:
 
 		return inner_div_content
 
-	def extract_academic_programs(self, driver, URL, needle):
-		"""Extract links to academic programs.
+	def extract_hrefs(self, haystack, superior_title):
+		"""
 
-		Starting from an URL, this function extracts all
-		URLs (hrefs) to all academic programs which serve
-		as a starting point for further crawling. All found
-		links are stored and returned via a list. When using
-		the 'needle', only URLs containing this string will be
-		returned from the haystack.
+		<a href="/curriculum/public/curriculum.xhtml?key=41934">Masterstudium Architektur </a>
+		->
+		[https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=41934|superior_title|Masterstudium Architektur]
+		"""
+		divider1 = '<a href="'
+		divider2 = '">'
+		divider3 = '</a>'
+
+		url_prefix = 'https://tiss.tuwien.ac.at'
+		return_data = []
+
+		while haystack.find(divider1) != -1:
+			position1 = haystack.find(divider1)
+
+			haystack = haystack[position1 + len(divider1):]
+
+			position2 = haystack.find(divider2)
+			position3 = haystack.find(divider3)
+
+			string_part1 = url_prefix + haystack[:position2]
+			string_part2 = haystack[position2 + len(divider2):position3].strip()
+
+			return_data.append(string_part1 + "|" + superior_title + "|" + string_part2)
+
+			haystack = haystack[position3 + len(divider3):]
+
+		return return_data
+
+	def extract_academic_programs(self, driver, URL):
+		"""Extract links and informations to academic programs.
+
 		"""
 		fetched_page = self.fetch_page(driver, URL)
 
-		elems = driver.find_elements_by_xpath("//a[@href]")
-		extract_academic_programs = []
+		divider1 = "<h2>"
+		divider2 = "</h2>"
 
-		for elem in elems:
-			href_element = elem.get_attribute("href")
-			href_text = elem.get_attribute("text").strip()
-			# only select links (hrefs) to academic programs:
-			if href_element.find(needle) != -1:
-				extract_academic_programs.append(href_element + "|" + href_text)
+		position1 = fetched_page.find(divider1)
 
-		return extract_academic_programs
+		fetched_page = fetched_page[position1 + len(divider1):]
+
+		return_collected_data = []
+
+		while fetched_page.find(divider1) != -1:
+			position1 = fetched_page.find(divider1)
+			position2 = fetched_page.find(divider2)
+
+			superior_title = fetched_page[:position2]
+
+			haystack = fetched_page[:fetched_page.find(divider1)]
+			extracted_links = self.extract_hrefs(haystack, superior_title)
+			return_collected_data.extend(extracted_links)
+
+			fetched_page = fetched_page[position1 + len(divider1):]
+
+		# process remainding of the string
+		fetched_page = fetched_page[:fetched_page.find('<div id="footer">')]
+		position2 = fetched_page.find(divider2)
+		superior_title = fetched_page[:position2]
+		extracted_links = self.extract_hrefs(fetched_page, superior_title)
+		return_collected_data.extend(extracted_links)
+
+		return return_collected_data
 
 	def extract_courses(self, driver, URL):
 		"""Extract courses from the (study) program.
@@ -306,9 +352,11 @@ class crawler:
 
 		return extracted_course_URLs
 
-	def extract_course_info(self, driver, URL, download_files = False):
+	def extract_course_info(self, driver, URL, academic_program_name, download_files = False):
 		"""Process a single course and extract relevenat information.
 		"""
+
+		print("academic_program_name: " + academic_program_name)
 
 		# determine/set the language (ger/en)
 		if not self.language:
@@ -346,8 +394,6 @@ class crawler:
 
 		semester_iterate_list = list(semester_list.keys())
 
-		i_stop = 0
-
 		for select_semester in range(len(semester_iterate_list)):
 			print("selecting: " + semester_iterate_list[select_semester])
 			select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
@@ -355,14 +401,6 @@ class crawler:
 			time.sleep(self.sleeptime_fetchpage)
 
 			selected_semester = semester_iterate_list[select_semester]
-			#print("selected semester: " + selected_semester)
-
-			# refetch the page (to get the correct year data)
-			#course_raw_info = self.fetch_page(driver, URL)
-
-			i_stop += 1
-			if i_stop > 4:
-				break
 
 			# get both languages
 			for i in range(0, 2):
@@ -382,14 +420,16 @@ class crawler:
 				if course_raw_info.find("Zu den Lehrunterlagen") != -1 and i == 0:
 					#pos_LU = course_raw_info.find("Zu den Lehrunterlagen")
 					print("materialsDE")
-					semester_list[selected_semester] =("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
-				str(course_number_URL) + "&semester=" + selected_semester)
+					semester_list[selected_semester] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
+						str(course_number_URL) + "&semester=" + selected_semester
+					)
 					found_materials = True
 				if course_raw_info.find("Go to Course Materials") != -1 and i == 0:
 					#pos_LU = course_raw_info.find("Go to Course Materials")
 					print("materialsEN")
-					semester_list[selected_semester] =("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
-				str(course_number_URL) + "&semester=" + selected_semester)
+					semester_list[selected_semester] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
+						str(course_number_URL) + "&semester=" + selected_semester
+					)
 					found_materials = True
 
 				# clear all data in the dict
@@ -468,7 +508,8 @@ class crawler:
 					"Exams": "Prüfungen",
 					"Group Registration": "Gruppen-Anmeldung",
 					"Course dates": "LVA Termine",
-					"Curricula": "Curricula"
+					"Curricula": "Curricula",
+					"Aim of course": "Ziele der Lehrveranstaltung"
 				}
 
 				# "<h2>-extraction" - each information is separated by an h2 element
@@ -509,6 +550,10 @@ class crawler:
 							warnings.warn("Error key is missing: " + header_titletext)
 
 					if header_titletext == "Merkmale":
+						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
+						extract_info = ""
+
+					if header_titletext == "Ziele der Lehrveranstaltung":
 						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
 						extract_info = ""
 
@@ -617,11 +662,26 @@ class crawler:
 		print(*return_info_dict.items(), sep='\n\n')
 
 		# download files
-		self.download_course_files(driver, course_number_URL, course_title, semester_list, download_files)
+		self.download_course_files(
+			driver,
+			course_number_URL,
+			course_title,
+			semester_list,
+			academic_program_name,
+			download_files
+		)
 
 		return return_info_dict
 
-	def download_course_files(self, driver, course_number_URL, course_title, semester_list, download_files):
+	def download_course_files(
+		self,
+		driver,
+		course_number_URL,
+		course_title,
+		semester_list,
+		academic_program_name,
+		download_files
+	):
 		"""Download all files (for all semesters) corresponding to a course.
 
 		Downloads are only available when being logged in. All (available) files
@@ -638,7 +698,8 @@ class crawler:
 							'https://tiss.tuwien.ac.at/education/course/documents.xhtml? \
 							courseNr=103064&semester=2021W'}. Empty entries denote no
 							available downloads.
-		.)download_files:	bool which indicates whether files should be downloaded or not.
+		.) academic_program_name: The name of the academic program (e.g., 'Technische Physik')
+		.) download_files:	bool which indicates whether files should be downloaded or not.
 							If set to False, no downloading will happen.
 		"""
 		if not self.logged_in:
@@ -650,6 +711,7 @@ class crawler:
 		if self.logged_in == True and course_number_URL != "" and download_files == True:
 			print("course number: " + course_number_URL)
 			print("course title: " + course_title)
+			print("academic program name: " + academic_program_name)
 
 			semester_list_key_dict = list(dict.fromkeys(semester_list)) 
 			for i in range(len(semester_list_key_dict)):
@@ -658,14 +720,24 @@ class crawler:
 					print("semester: " + semester_list_key_dict[i] + " -> " + "download url: " + materials_download_link)
 
 					download_temp_path = self.download_path_root + self.download_path_temp
-					download_move_path_courseNr = self.download_path_root + course_number_URL + " " + course_title + "/"
+					download_move_path_courseNr = (self.download_path_root +
+						academic_program_name + "/" + course_number_URL + " " +
+						course_title + "/"
+					)
 					download_move_path_semester = download_move_path_courseNr + semester_list_key_dict[i] + "/"
 
 					print("download_temp_path: " + download_temp_path)
 					print("download_move_path_courseNr: " + download_move_path_courseNr)
 					print("download_move_path_semester: " + download_move_path_semester)
 
-					# check if folder exists
+					# check if the folders exist
+					check_folder = self.download_path_root + academic_program_name + "/"
+					if not os.path.isdir(check_folder):
+						print("path " + check_folder + " does not exit - create folder")
+						os.mkdir(check_folder)
+					else:
+						print("path " + check_folder + " exits")
+
 					if not os.path.isdir(download_move_path_courseNr):
 						print("path " + download_move_path_courseNr + " does not exit - create folder")
 						os.mkdir(download_move_path_courseNr)
@@ -679,7 +751,9 @@ class crawler:
 						print("path " + download_move_path_semester + " exits")
 
 					#double check, whether folder creation was successful
-					if not os.path.isdir(download_move_path_courseNr) or not os.path.isdir(download_move_path_semester):
+					if (not os.path.isdir(download_move_path_courseNr) or
+						not os.path.isdir(download_move_path_semester)
+					):
 						print("something went wrong with creating folders")
 						warnings.warn("Error creating folders: " +
 						download_move_path_courseNr + " or " + download_move_path_semester)

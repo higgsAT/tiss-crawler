@@ -8,6 +8,7 @@ import time
 import crawl
 import pylogs
 
+
 """
 Two main logfiles:
 a) queued_courses.txt: Contains links to single courses
@@ -18,11 +19,12 @@ https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=260668
 .
 .
 
-b) academic_programs.txt: Academic program from which a) is being generate
-https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=40337|UF Mathematik
-https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=40406|UF Darstellende Geometrie
-https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=40505|UF Physik
-https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=40766|UF Chemie
+b) academic_programs.txt: Academic program from which a) is being generated
+https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=37047|Architektur|Bachelorstudium Architektur
+https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=41934|Architektur|Masterstudium Architektur
+https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=42323|Architektur|Masterstudium Building Science and Environment
+https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=59971|Architektur|Doktoratsstudium der Technischen Wissenschaften Architektur
+https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=57488|Architektur|Katalog Freie Wahlfächer - Architektur
 .
 .
 .
@@ -43,9 +45,31 @@ Via the function process_courses() the courses are processed. This is
 only an edge case since entries in b) are removed after all data in a)
 is processed. If individual courses are to be processed, this case can
 also apply.
+
+Downloaded files in 1.) and 2.) are stored in the following structure:
+.
+└── downloads
+    └── academic_program_name (e.g., 'Technische Physik')
+       └── courseNr + Course name (e.g., '136019 Quantentheorie I')
+          └── Semester (e.g., '2022W')
+             ├── File #1
+             ├── File #2
+             ├── .
+             ├── .
+             └── .
+          .
+          .
+          .
+For the last case (3.)), the academic_program_name is not determinable
+and the files are downloaded directly into the 'downloads' folder
+TODO: Write the information about the academic program into the
+'queued_courses.txt', so that when continuing, the correct folder
+for the downloaded files can be determined. This should be handled
+via the function extract_courses(...).
+
 """
 
-def process_courses(acad_course_list):
+def process_courses(acad_course_list, academic_program_name = ""):
 	"""Extract desired information for each course.
 
 	This function takes a list of URLs pointing to courses
@@ -64,17 +88,16 @@ def process_courses(acad_course_list):
 	is then inserted into a database for store.
 	"""
 	# work the courses-queue list
-	print("PROCESS COURSES: " + str(len(acad_course_list)))
+	print("PROCESS COURSES: " + str(len(acad_course_list)) + "; academic program name: " + academic_program_name)
 	for process_course in acad_course_list[:]:
 		# process the course
-		"""
 		download_files = True
 		return_info_dict = driver_instance.extract_course_info(
 			driver,
 			process_course,
+			academic_program_name,
 			download_files
 		)
-		"""
 
 		# SQL insert the returned data
 		# TODO
@@ -97,7 +120,7 @@ logging_academic_programs = "academic_programs.txt"
 logging_queued_courses = "queued_courses.txt"
 
 # initiate driver (instance)
-driver_instance = crawl.crawler(False, 800, 600, 5)
+driver_instance = crawl.crawler(False, 800, 600, 10)
 driver = driver_instance.init_driver()
 
 # log in to get more semesters in the academic program
@@ -128,9 +151,16 @@ else:
 	academic_program_URL = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
 	acad_program_list = driver_instance.extract_academic_programs(
 		driver,
-		academic_program_URL,
-		"key"
+		academic_program_URL
 	)
+
+	# fetch this page always in the same language (download folder names!)
+	if driver_instance.get_language(driver) != "en":
+		driver_instance.switch_language(driver)
+		acad_program_list = driver_instance.extract_academic_programs(
+			driver,
+			academic_program_URL
+		)
 
 	# write the information to the corresponding file
 	f = open(logging_folder + logging_academic_programs, "w")
@@ -160,9 +190,11 @@ if len(acad_course_list) > 0 and len(acad_program_list) == 0:
 
 # continue/start crawling
 for process_acad_prgm in acad_program_list[:]:
+	#ttps://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=57488|Architektur|Katalog Freie Wahlfächer - Architektur
 	process_acad_prgm_URL = process_acad_prgm.split('|')[0]
 	process_acad_prgm_name = process_acad_prgm.split('|')[1]
-	print("processing: " + process_acad_prgm_URL + " | " + process_acad_prgm_name)
+	process_acad_prgm_studycode = process_acad_prgm.split('|')[2]
+	print("processing: " + process_acad_prgm_URL + " | " + process_acad_prgm_name + " | " + process_acad_prgm_studycode)
 
 	# Take the URL of an academic program and extract all corresponding courses
 	acad_course_list_fetch = driver_instance.extract_courses(driver, process_acad_prgm_URL)
@@ -177,7 +209,7 @@ for process_acad_prgm in acad_program_list[:]:
 	f.close()
 
 	# extract course information for the academic course
-	process_courses(acad_course_list)
+	process_courses(acad_course_list, process_acad_prgm_name)
 
 	# remove the processed entry from acad_program_list
 	acad_program_list.remove(process_acad_prgm)
