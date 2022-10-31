@@ -403,6 +403,9 @@ class crawler:
 		sys.exit()
 		"""
 
+		# total amount of downloaded files for this course
+		amount_downloads = 0
+
 		# determine/set the language (ger/en)
 		if not self.language:
 			self.language = self.get_language(driver)
@@ -706,14 +709,8 @@ class crawler:
 
 				return_info_dict[selected_semester + self.language] = extract_dict
 
-		print("\n\nsemester download links: ")
-		print(semester_list)
-
-		print("\n\nreturn_info_dict: ")
-		print(*return_info_dict.items(), sep='\n\n')
-
 		# download files
-		self.download_course_files(
+		amount_downloads = self.download_course_files(
 			driver,
 			course_number_URL,
 			course_title_download_ger,
@@ -721,6 +718,14 @@ class crawler:
 			academic_program_name,
 			download_files
 		)
+
+		return_info_dict["amount_downloads"] = amount_downloads
+
+		print("\n\nsemester download links: ")
+		print(semester_list)
+
+		print("\n\nreturn_info_dict: ")
+		print(*return_info_dict.items(), sep='\n\n')
 
 		return return_info_dict
 
@@ -733,7 +738,6 @@ class crawler:
 		academic_program_name,
 		download_files
 	):
-		print("STARTING DOWNLOAD")
 		"""Download all files (for all semesters) corresponding to a course.
 
 		Downloads are only available when being logged in. All (available) files
@@ -754,6 +758,10 @@ class crawler:
 		.) download_files:	bool which indicates whether files should be downloaded or not.
 							If set to False, no downloading will happen.
 		"""
+		print("starting downloading files")
+
+		amount_downloads = 0
+
 		if (not self.logged_in and download_files == True):
 			print("not logged in -> loggin in")
 			self.tiss_login(driver)
@@ -788,19 +796,19 @@ class crawler:
 						print("path " + check_folder + " does not exist - create folder")
 						os.mkdir(check_folder)
 					else:
-						print("path " + check_folder + " exits")
+						print("path " + check_folder + " exists")
 
 					if not os.path.isdir(download_move_path_courseNr):
 						print("path " + download_move_path_courseNr + " does not exist - create folder")
 						os.mkdir(download_move_path_courseNr)
 					else:
-						print("path " + download_move_path_courseNr + " exits")
+						print("path " + download_move_path_courseNr + " exists")
 
 					if not os.path.isdir(download_move_path_semester):
 						print("path " + download_move_path_semester + " does not exist - create folder")
 						os.mkdir(download_move_path_semester)
 					else:
-						print("path " + download_move_path_semester + " exits")
+						print("path " + download_move_path_semester + " exists")
 
 					#double check, whether folder creation was successful
 					if (not os.path.isdir(download_move_path_courseNr) or
@@ -892,6 +900,7 @@ class crawler:
 						# download successful -> move files to final location
 						if downloads_finished == True and i_amount_downloads > 0 and amt_finished_dwnload > 0:
 							if amt_finished_dwnload == i_amount_downloads:
+								amount_downloads += i_amount_downloads
 								for entry in os.scandir(download_temp_path):
 									if entry.is_file():
 										print("move file: " + download_temp_path + entry.name + " into: " + download_move_path_semester + entry.name)
@@ -928,6 +937,9 @@ class crawler:
 				"; course_number_URL: " + course_number_URL + "; download_files: " +
 				str(download_files)
 			)
+
+		return amount_downloads
+
 
 	def extract_course_info_lecturers(self, extract_info):
 		cutstr1 = '<span>'

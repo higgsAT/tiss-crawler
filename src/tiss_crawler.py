@@ -11,11 +11,27 @@ from config import *
 import crawl
 import pylogs
 
+runtime_log = "runtime_log_" + pylogs.get_time()
+f_runtime = pylogs.open_logfile(root_dir + loggin_folder + runtime_log)
 
-logs = pylogs.logs(root_dir + loggin_folder)
+pylogs.dump_to_log(root_dir + loggin_folder + "dump_test", "this is a dump test")
+
+pylogs.write_to_logfile(f, "test1")
+time.sleep(1)
+pylogs.write_to_logfile(f, "test2")
+time.sleep(5)
+pylogs.write_to_logfile(f, "test3")
+time.sleep(1)
+pylogs.write_to_logfile(f, "test4")
+
+pylogs.close_logfile(f)
 
 
-#sys.exit()
+
+if not os.path.isdir(root_dir + loggin_folder):
+	print("YES")
+
+sys.exit()
 
 """
 # initiate driver (instance)
@@ -109,6 +125,9 @@ def process_courses(acad_course_list, academic_program_name = ""):
 	"""
 	# work the courses-queue list
 	print("PROCESS COURSES: " + str(len(acad_course_list)) + "; academic program name: " + academic_program_name)
+
+	ass
+
 	for process_course in acad_course_list[:]:
 		# process the course
 		return_info_dict = driver_instance.extract_course_info(
