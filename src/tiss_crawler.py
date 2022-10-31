@@ -4,12 +4,20 @@
 import os
 import sqlhandler
 import time
-
-import crawl
 import pylogs
 import sys
 
+from config import *
+import crawl
+import pylogs
 
+
+logs = pylogs.logs(root_dir + loggin_folder)
+
+
+#sys.exit()
+
+"""
 # initiate driver (instance)
 driver_instance = crawl.crawler(False, 800, 600, 10)
 driver = driver_instance.init_driver()
@@ -19,7 +27,7 @@ driver_instance.extract_course_info(driver, process_course, "Architecture", True
 
 
 sys.exit()
-
+"""
 
 """
 Two main logfiles:
@@ -103,12 +111,11 @@ def process_courses(acad_course_list, academic_program_name = ""):
 	print("PROCESS COURSES: " + str(len(acad_course_list)) + "; academic program name: " + academic_program_name)
 	for process_course in acad_course_list[:]:
 		# process the course
-		download_files = True
 		return_info_dict = driver_instance.extract_course_info(
 			driver,
 			process_course,
 			academic_program_name,
-			download_files
+			True
 		)
 
 		# SQL insert the returned data
@@ -124,7 +131,6 @@ def process_courses(acad_course_list, academic_program_name = ""):
 		for i in range(len(acad_course_list)):
 			f.write(acad_course_list[i] + "\n")
 		f.close()
-
 
 # set folders / files
 logging_folder = "logs/"
@@ -156,23 +162,21 @@ if os.path.isfile(logging_folder + logging_academic_programs):
 		for line in file:
 			acad_program_list.append(line.rstrip())
 else:
-	# no file containing academic programs was found -> "start at zero"
+	# no file containing academic programs was found -> "start at zero". Fetch
+	# all academic programs and add them to the list
 	print('file "' + logging_folder + logging_academic_programs + '" does not exist')
 
 	# fetch all available academic programs
 	academic_program_URL = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
+
+	# fetch this page always in the same language (download folder names!)
+	if driver_instance.get_language(driver) != "de":
+		driver_instance.switch_language(driver)
+
 	acad_program_list = driver_instance.extract_academic_programs(
 		driver,
 		academic_program_URL
 	)
-
-	# fetch this page always in the same language (download folder names!)
-	if driver_instance.get_language(driver) != "en":
-		driver_instance.switch_language(driver)
-		acad_program_list = driver_instance.extract_academic_programs(
-			driver,
-			academic_program_URL
-		)
 
 	# write the information to the corresponding file
 	f = open(logging_folder + logging_academic_programs, "w")
@@ -211,8 +215,9 @@ for process_acad_prgm in acad_program_list[:]:
 	# Take the URL of an academic program and extract all corresponding courses
 	acad_course_list_fetch = driver_instance.extract_courses(driver, process_acad_prgm_URL)
 
-	# append the fetched data to the processing list
+	# append the fetched data to the processing list, remove duplicates
 	acad_course_list.extend(acad_course_list_fetch)
+	acad_course_list = list( dict.fromkeys(acad_course_list) )
 
 	# write extracted courses into the logfile.
 	f = open(logging_folder + logging_queued_courses, "w")

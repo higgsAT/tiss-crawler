@@ -26,17 +26,6 @@ correct point in case the program gets interrupted.
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 def test():
 	print("TESTTT")
 	logs.test2()
