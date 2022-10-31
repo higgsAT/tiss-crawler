@@ -49,7 +49,6 @@ class crawler:
 		window height and width, etc.), this function initiates the
 		webdriver.
 		"""
-		print ('initing driver')
 
 		# firefox browser options
 		opts = FirefoxOptions()
@@ -317,7 +316,7 @@ class crawler:
 
 			fetched_page = fetched_page[position1 + len(divider1):]
 
-		# process remainding of the string
+		# process rest of the string
 		fetched_page = fetched_page[:fetched_page.find('<div id="footer">')]
 		position2 = fetched_page.find(divider2)
 		superior_title = fetched_page[:position2]
@@ -376,32 +375,19 @@ class crawler:
 
 		return extracted_course_URLs
 
-	def extract_course_info(self, driver, URL, academic_program_name, download_files = False):
+	def extract_course_info(
+		self,
+		driver,
+		URL,
+		academic_program_name,
+		f_runtime,
+		download_files = False
+	):
 		"""Process a single course and extract relevenat information.
 		"""
 
-		print("academic_program_name: " + academic_program_name)
-
-		"""
-		course_number = "253G61"
-		course_title = "Orientierungskurs und Gegenwartsarchitektur"
-		semester_list= {}
-		semester_list["2022W"] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
-						str(course_number) + "&semester=" + "2022W")
-		academic_program_name = "Architektur"
-
-		# download files
-		self.download_course_files(
-			driver,
-			course_number,
-			course_title,
-			semester_list,
-			academic_program_name,
-			download_files
-		)
-
-		sys.exit()
-		"""
+		# create logging files folder path (for source files)
+		academic_program_logpath = root_dir + loggin_folder + academic_program_name
 
 		# total amount of downloaded files for this course
 		amount_downloads = 0
@@ -463,6 +449,7 @@ class crawler:
 
 				print("i: " + str(i) + "  |  set language: " + self.language)
 
+				pylogs.write_to_logfile(f_runtime, 'open URL: ' + URL + ' | lang: ' + self.language)
 				course_raw_info = self.fetch_page(driver, URL)
 
 				# check if materials are available for download
@@ -501,7 +488,8 @@ class crawler:
 				# sanity course number check
 				if course_number_URL != course_number.replace('.', ''):
 					warnings.warn("Error mismatching course numbers: " +
-						course_number.replace('.', '') + " and " + course_number_URL)
+						course_number.replace('.', '') + " and " + course_number_URL
+					)
 
 				course_raw_info = course_raw_info[pos2 + len(needle2):]
 				#print(course_raw_info)
@@ -511,6 +499,11 @@ class crawler:
 				course_title = course_raw_info[:pos3].strip()
 				print("course title: |" + course_title + "|")
 				extract_dict["course title"] = course_title
+
+				pylogs.dump_to_log(academic_program_logpath + '/' + course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '.txt', course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '\n\n\n' + course_raw_info)
+
+				print("STOPP")
+				sys.exit()
 
 				if (course_title_download_ger == "" and self.language == "de"):
 					course_title_download_ger = course_title

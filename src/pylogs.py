@@ -35,13 +35,14 @@ def write_to_logfile(file_pointer, log_message):
 
 		time_now = get_time()
 
+		print(log_message)
 		file_pointer.write(time_now + " >> " + log_message + "\n")
 		file_pointer.flush()
 		os.fsync(file_pointer)
 
 def dump_to_log(logfile_file_path, log_message):
 	'''dump a log message into a logfile and close the file'''
-	f = open(logfile_file_path + ".log", "w")
+	f = open(logfile_file_path, "w")
 	f.write(log_message)
 	f.close()
 
