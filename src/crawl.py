@@ -4,8 +4,15 @@
 import os
 import random
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+#from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.select import Select
+from selenium.webdriver.common.by import By
+#from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver import Firefox, FirefoxOptions
+#from selenium.webdriver.firefox.options import Options
+
+import sys
 import time
 import warnings
 
@@ -28,16 +35,16 @@ class crawler:
 		to False, the other two variables define the height
 		and width of the the browser window.
 		"""
-		self.headless = run_headless						# True ... run in headless mode
-		self.non_headless_height = non_headless_height		# height of the browser window (if run_headless == False)
+		self.headless = run_headless							# True ... run in headless mode
+		self.non_headless_height = non_headless_height	# height of the browser window (if run_headless == False)
 		self.non_headless_width = non_headless_width		# width of the browser window (if run_headless == False)
 		self.sleeptime_fetchpage = sleeptime				# used in the function fetch_page() to ensure JS has been loaded
-		self.language = ""									# set language (de/en) used by extract_course_info(...)
-		self.crawl_delay = 5.0								# crawl delay in seconds
+		self.language = ""										# set language (de/en) used by extract_course_info(...)
+		self.crawl_delay = 5.0									# crawl delay in seconds
 		self.last_crawltime = time.time()					# last time a page has been fetched (t_init = t_start)
-		self.download_path_root = "/home/itsme/Desktop/git_repos/tiss-crawler/downloads/"
-		self.download_path_temp = "temp/"
-		self.logged_in = False								# login-state changed by self.tiss_login(...)
+		self.download_path_root = download_folder			# dir for download folder (set in config.py)
+		self.download_path_temp = "temp/"					# dir where files will be downloaded temporarily
+		self.logged_in = False									# login-state changed by self.tiss_login(...)
 
 	def init_driver(self):
 		"""Initiate the webdriver (as defined by the user).
@@ -48,33 +55,54 @@ class crawler:
 		"""
 		print ('initing driver')
 
-		# browser options for chrome
-		chrome_options = Options()
-		chrome_options.add_argument("--disable-extensions")
-		chrome_options.add_argument("--disable-gpu")
-		chrome_options.add_argument("--no-sandbox") # linux only
-		#chrome_options.add_experimental_option("detach", True)
-		chrome_options.add_experimental_option("prefs", {
-			"download.default_directory": self.download_path_root + self.download_path_temp,
-			"download.prompt_for_download": False,
-			"download.directory_upgrade": True,
-			"safebrowsing.enabled": True,
-			'profile.default_content_setting_values.automatic_downloads': 1
-		})
+		# firefox browser options
+		opts = FirefoxOptions()
+
+		opts.set_preference("browser.download.folderList", 2)
+		opts.set_preference("browser.download.manager.showWhenStarting", False)
+		opts.set_preference("browser.download.dir", self.download_path_root + self.download_path_temp)
+		#opts.set_preference("browser.helperApps.neverAsk.openFile", "");
+		opts.set_preference("browser.helperApps.alwaysAsk.force", False);
+
+		#opts.set_preference("browser.helperApps.neverAsk.saveToDisk", "text/plain,application/octet-stream,application/pdf,application/x-pdf,application/vnd.pdf");
+		#opts.set_preference("browser.helperApps.neverAsk.openFile","text/plain,application/octet-stream,application/pdf,application/x-pdf,application/vnd.pdf");
+
+		opts.set_preference("browser.download.manager.useWindow", False);
+		opts.set_preference("browser.download.manager.focusWhenStarting", False);
+		opts.set_preference("browser.download.manager.alertOnEXEOpen", False);
+		opts.set_preference("browser.download.manager.showAlertOnComplete", False);
+		opts.set_preference("browser.download.manager.closeWhenDone", True);
+		opts.set_preference("pdfjs.disabled", True);
+
+		mime_types = [
+		    'text/plain',
+		    'application/vnd.ms-excel',
+		    'text/csv',
+		    'application/csv',
+		    'text/comma-separated-values',
+		    'application/download',
+		    'application/octet-stream',
+		    'binary/octet-stream',
+		    'application/binary',
+		    'application/x-unknown'
+		]
+		opts.set_preference("browser.helperApps.neverAsk.saveToDisk", ",".join(mime_types))
+
+		# set the user agent
+		opts.set_preference("general.useragent.override", "userAgent = Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36")
 
 		# option for running headless (opening a visible browser window or not)
 		if self.headless == True:
-			chrome_options.add_argument("--headless")
-
-		# set the user agent
-		chrome_options.add_argument("user-agent = Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36")
-
-		# set the driver (chrome)
-		driver = webdriver.Chrome(options = chrome_options)
+			opts.add_argument("--headless")
 
 		# set the browser window size (if run_headless == False)
 		if self.headless == False:
-			driver.set_window_size(self.non_headless_width, self.non_headless_height)
+			#driver.set_window_size(self.non_headless_width, self.non_headless_height)
+			opts.add_argument("--width=" + str(self.non_headless_width))
+			opts.add_argument("--height=" + str(self.non_headless_height))
+
+		#driver = webdriver.Chrome(ChromeDriverManager().install())
+		driver = Firefox(options = opts)
 
 		"""
 		Return the handle to keep the browser open over the span
@@ -97,11 +125,14 @@ class crawler:
 		self.get_page(driver, URLlogin)
 
 		# find username/password field and send the info the input fields
-		driver.find_element_by_id("username").send_keys(TissUsername)
-		driver.find_element_by_id("password").send_keys(TissPassword)
-		
+		driver.find_element("name", "username").send_keys(TissUsername)
+		driver.find_element("name", "password").send_keys(TissPassword)
+		#driver.find_element_by_id("username").send_keys(TissUsername)
+		#driver.find_element_by_id("password").send_keys(TissPassword)
+
 		# click login button
-		driver.find_element_by_id("samlloginbutton").click()
+		driver.find_element("id", "samlloginbutton").click()
+		#driver.find_element_by_id("samlloginbutton").click()
 
 		# load this page (else the login won't work correctly)
 		page_to_fetch = "https://login.tuwien.ac.at/AuthServ/AuthServ.authenticate?app=76"
@@ -163,10 +194,14 @@ class crawler:
 		set_language = self.get_language(driver)
 
 		if (set_language == "de"):
-			driver.find_element_by_id("language_en").click()
+			#driver.find_element_by_id("language_en").click()
+			driver.find_element("id", "language_en").click()
+
 			self.language = "en"
 		else:
-			driver.find_element_by_id("language_de").click()
+			#driver.find_element_by_id("language_de").click()
+			driver.find_element("id", "language_de").click()
+
 			self.language = "de"
 
 		# wait for the page to be loaded correctly (JS)
@@ -324,18 +359,26 @@ class crawler:
 		time.sleep(self.sleeptime_fetchpage)
 
 		# selector element for year(semester) selection
-		selector = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
+		#selector = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
+		selector = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
 
 		extracted_course_URLs = []
 
+		#for i in selector.options:
+		    #print(i.get_attribute('innerHTML'))
+
 		# loop through all semesters and store all links to the courses
 		for index in range(len(selector.options)):
-			select = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
+			#select = Select(driver.find_element_by_name("j_id_2d:semesterSelect"))
+			select = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
+
 			select.select_by_index(index)
 			time.sleep(self.sleeptime_fetchpage)
 
 			# extract all links found
-			elems = driver.find_elements_by_xpath("//a[@href]")
+			#elems = driver.find_elements_by_xpath("//a[@href]")
+			elems = driver.find_elements(By.XPATH, "//a[@href]")
+
 			for elem in elems:
 				href_element = elem.get_attribute("href")
 				if href_element.find("courseDetails") != -1:
@@ -357,6 +400,27 @@ class crawler:
 		"""
 
 		print("academic_program_name: " + academic_program_name)
+
+
+		course_number = "253G61"
+		course_title = "Orientierungskurs und Gegenwartsarchitektur"
+		semester_list= {}
+		semester_list["2022W"] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
+						str(course_number) + "&semester=" + "2022W")
+		academic_program_name = "Architektur"
+
+		# download files
+		self.download_course_files(
+			driver,
+			course_number,
+			course_title,
+			semester_list,
+			academic_program_name,
+			download_files
+		)
+
+		sys.exit()
+
 
 		# determine/set the language (ger/en)
 		if not self.language:
@@ -383,7 +447,8 @@ class crawler:
 		# fetch page (to get the option informations)
 		self.fetch_page(driver, URL)
 
-		selector = Select(driver.find_element_by_name("semesterForm:j_id_25"))
+		#selector = Select(driver.find_element_by_name("semesterForm:j_id_25"))
+		selector = Select(driver.find_element("name", "semesterForm:j_id_25"))
 
 		# loop through all semesters, extract the desired information
 		for option in selector.options:
@@ -392,11 +457,10 @@ class crawler:
 			semester_list[semester_option_attribute] = ""
 			#print(semester_option_text + "|" + semester_option_attribute)
 
-		semester_iterate_list = list(semester_list.keys())
-
 		for select_semester in range(len(semester_iterate_list)):
 			print("selecting: " + semester_iterate_list[select_semester])
-			select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
+			#select = Select(driver.find_element_by_name("semesterForm:j_id_25"))
+			select = Select(driver.find_element("name", "semesterForm:j_id_25"))
 			select.select_by_visible_text(semester_iterate_list[select_semester])
 			time.sleep(self.sleeptime_fetchpage)
 
@@ -682,6 +746,7 @@ class crawler:
 		academic_program_name,
 		download_files
 	):
+		print("STARTING DOWNLOAD")
 		"""Download all files (for all semesters) corresponding to a course.
 
 		Downloads are only available when being logged in. All (available) files
@@ -702,7 +767,7 @@ class crawler:
 		.) download_files:	bool which indicates whether files should be downloaded or not.
 							If set to False, no downloading will happen.
 		"""
-		if not self.logged_in:
+		if (not self.logged_in and download_files == True):
 			print("not logged in -> loggin in")
 			self.tiss_login(driver)
 		else:
@@ -713,7 +778,7 @@ class crawler:
 			print("course title: " + course_title)
 			print("academic program name: " + academic_program_name)
 
-			semester_list_key_dict = list(dict.fromkeys(semester_list)) 
+			semester_list_key_dict = list(dict.fromkeys(semester_list))
 			for i in range(len(semester_list_key_dict)):
 				materials_download_link = semester_list[semester_list_key_dict[i]]
 				if materials_download_link != "":
@@ -781,7 +846,7 @@ class crawler:
 
 						## wait for downloads to finish (and move them afterwards):
 						# count the downloads in the *temp/-folder. When All downloads are
-						# finished (no file with *.crdownload ending), move them to the final location.
+						# finished (no file with *.part ending), move them to the final location.
 						download_first_iteration = True
 						downloads_finished = False
 						i_downloads = 0
@@ -789,7 +854,7 @@ class crawler:
 						time_abort = 300
 
 						# fetch all files in the /temp folder and check, whether the file ending
-						# is ".crdownloads". All these files are being downloaded at the moment.
+						# is ".part". All these files are being downloaded at the moment.
 						# Check the file size difference after a certain amount of time.
 						while downloads_finished == False:
 							print("iteration number: " + str(i_downloads))
@@ -798,14 +863,21 @@ class crawler:
 							amt_not_finished_dwnload = 0
 							#max_filesize_found = 0
 
+							i = 0
+
 							for entry in os.scandir(download_temp_path):
+								print("~~~~~~~~~~~~~~~~~~")
 								if entry.is_file():
-									if entry.name[-11:] == ".crdownload":
+									print(str(i) + " -> " + entry.name)
+									if entry.name[-5:] == ".part":
 										print("   path: " + download_temp_path + entry.name + " -> size: " + str(os.path.getsize(download_temp_path + entry.name)/1000 ))
 										amt_not_finished_dwnload += 1
 										#max_filesize_found = max(max_filesize_found, os.path.getsize(download_temp_path + entry.name))
 									else:
 										amt_finished_dwnload += 1
+								print("~~~~~~~~~~~~~~~~~~")
+								print("\n\n")
+								i += 1
 
 							if amt_not_finished_dwnload == 0:
 								downloads_finished = True
@@ -838,25 +910,32 @@ class crawler:
 								print("Amount of queued files and amount of downloaded files differs!")
 								print("#Queued files: " + str(i_amount_downloads))
 								print("#Downloaded files: " + str(amt_finished_dwnload))
-						# download failed -> clear temp folder of files
-						else:
-							for entry in os.scandir(download_temp_path):
-								if entry.is_file():
-									print("del: " + entry.name)
-									os.remove(download_temp_path + entry.name)
 
-							i_empty_check = 0
-							for entry in os.scandir(download_temp_path):
-								if entry.is_file():
-									i_empty_check += 1
+						# clear temp folder of files in any way so that future downloads
+						# will not fail (this folder should be empty at every starting download)
+						i_temp_dwnld_clear = 0
+						for entry in os.scandir(download_temp_path):
+							if entry.is_file():
+								i_temp_dwnld_clear += 1
+								print("del: " + entry.name)
+								os.remove(download_temp_path + entry.name)
 
-							if i_empty_check > 0:
-								print("Error: folder " + download_temp_path + "not empty")
+						print("deleted " + str(i_temp_dwnld_clear) + " files remaining in /tmp")
+
+						i_empty_check = 0
+						for entry in os.scandir(download_temp_path):
+							if entry.is_file():
+								i_empty_check += 1
+
+						if i_empty_check > 0:
+							print("Error: folder " + download_temp_path + "not empty")
+
 		else:
 			print("Not downloading files -> self.logged_in: " + str(self.logged_in) +
 				"; course_number_URL: " + course_number_URL + "; download_files: " +
 				str(download_files)
 			)
+
 	def extract_course_info_lecturers(self, extract_info):
 		cutstr1 = '<span>'
 		cutstr2 = '</span>'

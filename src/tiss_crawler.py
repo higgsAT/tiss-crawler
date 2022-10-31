@@ -7,6 +7,18 @@ import time
 
 import crawl
 import pylogs
+import sys
+
+
+# initiate driver (instance)
+driver_instance = crawl.crawler(False, 800, 600, 10)
+driver = driver_instance.init_driver()
+
+process_course = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=253G61"
+driver_instance.extract_course_info(driver, process_course, "Architecture", True)
+
+
+sys.exit()
 
 
 """
@@ -125,7 +137,7 @@ driver = driver_instance.init_driver()
 
 # log in to get more semesters in the academic program
 # which results in more courses found.
-driver_instance.tiss_login(driver)
+#driver_instance.tiss_login(driver)
 
 # check the state of eventual previous crawls
 if not os.path.exists(logging_folder):
