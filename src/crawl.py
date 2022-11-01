@@ -380,11 +380,14 @@ class crawler:
 		driver,
 		URL,
 		academic_program_name,
-		f_runtime,
+		pylogs_filepointer,
 		download_files = False
 	):
 		"""Process a single course and extract relevenat information.
 		"""
+
+		# number of processed semesters for this course (e.g., 2021W, 2021S yields 2)
+		amt_of_semesters_processed = 0
 
 		# create logging files folder path (for source files)
 		academic_program_logpath = root_dir + loggin_folder + academic_program_name
@@ -422,6 +425,8 @@ class crawler:
 		# used for download folder names. Should always be set to german.
 		course_title_download_ger = ""
 
+		unknown_fields = []
+
 		# loop through all semesters, extract the desired information
 		for option in selector.options:
 			semester_option_text = option.text
@@ -430,6 +435,8 @@ class crawler:
 			#print(semester_option_text + "|" + semester_option_attribute)
 
 		semester_iterate_list = list(semester_list.keys())
+
+		pylogs.write_to_logfile(pylogs_filepointer, 'semester_iterate_list: ' + str(semester_iterate_list))
 
 		for select_semester in range(len(semester_iterate_list)):
 			print("selecting: " + semester_iterate_list[select_semester])
@@ -449,8 +456,12 @@ class crawler:
 
 				print("i: " + str(i) + "  |  set language: " + self.language)
 
-				pylogs.write_to_logfile(f_runtime, 'open URL: ' + URL + ' | lang: ' + self.language)
+				pylogs.write_to_logfile(pylogs_filepointer, 'open URL: ' + URL +
+					' | lang: ' + self.language +
+					' | selected_semester: ' + str(selected_semester)
+				)
 				course_raw_info = self.fetch_page(driver, URL)
+				amt_of_semesters_processed += 1
 
 				# check if materials are available for download
 				found_materials = False
@@ -459,7 +470,7 @@ class crawler:
 					#pos_LU = course_raw_info.find("Zu den Lehrunterlagen")
 					print("materialsDE")
 					semester_list[selected_semester] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
-						str(course_number_URL) + "&semester=" + selected_semester
+						str(course_number_URL) + "&semester=" + str(select_semester)
 					)
 					found_materials = True
 				if course_raw_info.find("Go to Course Materials") != -1 and i == 0:
@@ -482,7 +493,7 @@ class crawler:
 				needle2 = "</span>"
 				pos2 = course_raw_info.find(needle2)
 				course_number = course_raw_info[pos1 + len(needle1):pos2].strip()
-				print("course nmbr: |" +  course_number + "|")
+				#print("course nmbr: |" +  course_number + "|")
 				extract_dict["course number"] = course_number
 
 				# sanity course number check
@@ -497,13 +508,10 @@ class crawler:
 				needle3 = "<"
 				pos3 = course_raw_info.find(needle3)
 				course_title = course_raw_info[:pos3].strip()
-				print("course title: |" + course_title + "|")
+				#print("course title: |" + course_title + "|")
 				extract_dict["course title"] = course_title
 
 				pylogs.dump_to_log(academic_program_logpath + '/' + course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '.txt', course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '\n\n\n' + course_raw_info)
-
-				print("STOPP")
-				sys.exit()
 
 				if (course_title_download_ger == "" and self.language == "de"):
 					course_title_download_ger = course_title
@@ -514,7 +522,7 @@ class crawler:
 				needle5 = "</div>"
 				pos5 = course_raw_info.find(needle5)
 				quickinfo = course_raw_info[pos4 + len(needle4):pos5].strip()
-				print("quickinfo: |" + quickinfo + "|")
+				#print("quickinfo: |" + quickinfo + "|")
 
 				quickinfo_split = quickinfo.split(',')
 				extract_dict["semester"] = quickinfo_split[0].strip()
@@ -640,7 +648,6 @@ class crawler:
 						extract_dict[header_titletext] = extract_info.replace('\n', '').strip()
 						extract_info = ""
 
-
 					if header_titletext == "Vortragende Personen":
 						extract_dict[header_titletext] = self.extract_course_info_lecturers(extract_info)
 						extract_info = ""
@@ -648,7 +655,7 @@ class crawler:
 					add_info_flag = False
 					if header_titletext == "Weitere Informationen":
 						add_info_flag = True
-						past_entries = count_entry_dict["Weitere Informationen"]
+						past_entries = count_entry_dContinuict["Weitere Informationen"]
 
 						extract_dict[header_titletext + str(past_entries)] = extract_info.replace('\n', '').strip()
 						extract_info = ""
@@ -694,6 +701,9 @@ class crawler:
 
 					if extract_info != "":
 						warnings.warn("Error processing course description (unkown field) " + header_titletext)
+						unknown_fields.append(header_titletext + "|" + course_number + "|" +
+							self.language + "|" + academic_program_name + "|" + course_title
+						)
 
 					i += 1
 
@@ -709,18 +719,13 @@ class crawler:
 			course_title_download_ger,
 			semester_list,
 			academic_program_name,
-			download_files
+			download_files,
+			pylogs_filepointer
 		)
 
-		return_info_dict["amount_downloads"] = amount_downloads
+		unknown_fields = list( dict.fromkeys(unknown_fields) )
 
-		print("\n\nsemester download links: ")
-		print(semester_list)
-
-		print("\n\nreturn_info_dict: ")
-		print(*return_info_dict.items(), sep='\n\n')
-
-		return return_info_dict
+		return return_info_dict, amount_downloads, amt_of_semesters_processed, unknown_fields
 
 	def download_course_files(
 		self,
@@ -729,7 +734,8 @@ class crawler:
 		course_title,
 		semester_list,
 		academic_program_name,
-		download_files
+		download_files,
+		pylogs_filepointer
 	):
 		"""Download all files (for all semesters) corresponding to a course.
 
@@ -751,26 +757,27 @@ class crawler:
 		.) download_files:	bool which indicates whether files should be downloaded or not.
 							If set to False, no downloading will happen.
 		"""
-		print("starting downloading files")
+		pylogs.write_to_logfile(pylogs_filepointer, 'starting downloading files')
 
 		amount_downloads = 0
 
 		if (not self.logged_in and download_files == True):
-			print("not logged in -> loggin in")
+			#print("not logged in -> loggin in")
 			self.tiss_login(driver)
-		else:
-			print("logged in")
+		#else:
+			#print("logged in")
 
 		if self.logged_in == True and course_number_URL != "" and download_files == True:
-			print("course number: " + course_number_URL)
-			print("course title: " + course_title)
-			print("academic program name: " + academic_program_name)
+			#print("course number: " + course_number_URL)
+			#print("course title: " + course_title)
+			#print("academic program name: " + academic_program_name)
 
 			semester_list_key_dict = list(dict.fromkeys(semester_list))
 			for i in range(len(semester_list_key_dict)):
+				pylogs.write_to_logfile(pylogs_filepointer, 'processing: ' + semester_list_key_dict[i])
 				materials_download_link = semester_list[semester_list_key_dict[i]]
 				if materials_download_link != "":
-					print("semester: " + semester_list_key_dict[i] + " -> " + "download url: " + materials_download_link)
+					#print("semester: " + semester_list_key_dict[i] + " -> " + "download url: " + materials_download_link)
 
 					download_temp_path = self.download_path_root + self.download_path_temp
 					download_move_path_courseNr = (self.download_path_root +
@@ -779,35 +786,35 @@ class crawler:
 					)
 					download_move_path_semester = download_move_path_courseNr + semester_list_key_dict[i] + "/"
 
-					print("download_temp_path: " + download_temp_path)
-					print("download_move_path_courseNr: " + download_move_path_courseNr)
-					print("download_move_path_semester: " + download_move_path_semester)
+					#print("download_temp_path: " + download_temp_path)
+					#print("download_move_path_courseNr: " + download_move_path_courseNr)
+					#print("download_move_path_semester: " + download_move_path_semester)
 
 					# check if the folders exist
 					check_folder = self.download_path_root + academic_program_name + "/"
 					if not os.path.isdir(check_folder):
-						print("path " + check_folder + " does not exist - create folder")
+						#print("path " + check_folder + " does not exist - create folder")
 						os.mkdir(check_folder)
-					else:
-						print("path " + check_folder + " exists")
+					#else:
+						#print("path " + check_folder + " exists")
 
 					if not os.path.isdir(download_move_path_courseNr):
-						print("path " + download_move_path_courseNr + " does not exist - create folder")
+						#print("path " + download_move_path_courseNr + " does not exist - create folder")
 						os.mkdir(download_move_path_courseNr)
-					else:
-						print("path " + download_move_path_courseNr + " exists")
+					#else:
+						#print("path " + download_move_path_courseNr + " exists")
 
 					if not os.path.isdir(download_move_path_semester):
-						print("path " + download_move_path_semester + " does not exist - create folder")
+						#print("path " + download_move_path_semester + " does not exist - create folder")
 						os.mkdir(download_move_path_semester)
-					else:
-						print("path " + download_move_path_semester + " exists")
+					#else:
+						#print("path " + download_move_path_semester + " exists")
 
 					#double check, whether folder creation was successful
 					if (not os.path.isdir(download_move_path_courseNr) or
 						not os.path.isdir(download_move_path_semester)
 					):
-						print("something went wrong with creating folders")
+						#print("something went wrong with creating folders")
 						warnings.warn("Error creating folders: " +
 						download_move_path_courseNr + " or " + download_move_path_semester)
 					else:
@@ -830,7 +837,7 @@ class crawler:
 
 							i_amount_downloads += 1
 
-						print("Downloads queued: " + str(i_amount_downloads))
+						#print("Downloads queued: " + str(i_amount_downloads))
 
 						## wait for downloads to finish (and move them afterwards):
 						# count the downloads in the *temp/-folder. When All downloads are
@@ -845,7 +852,7 @@ class crawler:
 						# is ".part". All these files are being downloaded at the moment.
 						# Check the file size difference after a certain amount of time.
 						while downloads_finished == False:
-							print("iteration number: " + str(i_downloads))
+							#print("iteration number: " + str(i_downloads))
 
 							amt_finished_dwnload = 0
 							amt_not_finished_dwnload = 0
@@ -854,17 +861,17 @@ class crawler:
 							i = 0
 
 							for entry in os.scandir(download_temp_path):
-								print("~~~~~~~~~~~~~~~~~~")
+								#print("~~~~~~~~~~~~~~~~~~")
 								if entry.is_file():
-									print(str(i) + " -> " + entry.name)
+									#print(str(i) + " -> " + entry.name)
 									if entry.name[-5:] == ".part":
-										print("   path: " + download_temp_path + entry.name + " -> size: " + str(os.path.getsize(download_temp_path + entry.name)/1000 ))
+										#print("   path: " + download_temp_path + entry.name + " -> size: " + str(os.path.getsize(download_temp_path + entry.name)/1000 ))
 										amt_not_finished_dwnload += 1
 										#max_filesize_found = max(max_filesize_found, os.path.getsize(download_temp_path + entry.name))
 									else:
 										amt_finished_dwnload += 1
-								print("~~~~~~~~~~~~~~~~~~")
-								print("\n\n")
+								#print("~~~~~~~~~~~~~~~~~~")
+								#print("\n\n")
 								i += 1
 
 							if amt_not_finished_dwnload == 0:
@@ -879,10 +886,17 @@ class crawler:
 							time.sleep(1)
 							i_downloads += 1
 
-						print("amt_finished_dwnload: " + str(amt_finished_dwnload))
-						print("amt_not_finished_dwnload: " + str(amt_not_finished_dwnload))
-						print("downloads_finished: " + str(downloads_finished))
-						print("download time: " + str(delta_t))
+						#print("amt_finished_dwnload: " + str(amt_finished_dwnload))
+						#print("amt_not_finished_dwnload: " + str(amt_not_finished_dwnload))
+						#print("downloads_finished: " + str(downloads_finished))
+						#print("download time: " + str(delta_t))
+
+						pylogs.write_to_logfile(pylogs_filepointer,
+							'amt_finished_dwnload: ' + str(amt_finished_dwnload) +
+							' ; amt_not_finished_dwnload: ' + str(amt_not_finished_dwnload) +
+							' ; downloads_finished: ' + str(downloads_finished) +
+							' ; time: ' + str(delta_t)
+						)
 
 						# in case all downloads are private (e.g. only available if enrolled),
 						# remove the folder since it is only empty
@@ -896,15 +910,15 @@ class crawler:
 								amount_downloads += i_amount_downloads
 								for entry in os.scandir(download_temp_path):
 									if entry.is_file():
-										print("move file: " + download_temp_path + entry.name + " into: " + download_move_path_semester + entry.name)
+										#print("move file: " + download_temp_path + entry.name + " into: " + download_move_path_semester + entry.name)
 										if os.path.isdir(download_move_path_semester):
 											os.rename(download_temp_path + entry.name, download_move_path_semester + entry.name)
-										else:
-											print("path: " + download_move_path_semester + " does not exists")
+										#else:
+											#print("path: " + download_move_path_semester + " does not exists")
 							else:
-								print("Amount of queued files and amount of downloaded files differs!")
-								print("#Queued files: " + str(i_amount_downloads))
-								print("#Downloaded files: " + str(amt_finished_dwnload))
+								pylogs.write_to_logfile(pylogs_filepointer,
+									'Amount of queued files and amount of downloaded files differs!'
+								)
 
 						# clear temp folder of files in any way so that future downloads
 						# will not fail (this folder should be empty at every starting download)
@@ -912,10 +926,10 @@ class crawler:
 						for entry in os.scandir(download_temp_path):
 							if entry.is_file():
 								i_temp_dwnld_clear += 1
-								print("del: " + entry.name)
+								#print("del: " + entry.name)
 								os.remove(download_temp_path + entry.name)
 
-						print("deleted " + str(i_temp_dwnld_clear) + " files remaining in /tmp")
+						#print("deleted " + str(i_temp_dwnld_clear) + " files remaining in /tmp")
 
 						i_empty_check = 0
 						for entry in os.scandir(download_temp_path):
@@ -923,10 +937,13 @@ class crawler:
 								i_empty_check += 1
 
 						if i_empty_check > 0:
-							print("Error: folder " + download_temp_path + "not empty")
+							pylogs.write_to_logfile(pylogs_filepointer,
+								"Error: folder " + download_temp_path + "not empty"
+							)
 
 		else:
-			print("Not downloading files -> self.logged_in: " + str(self.logged_in) +
+			pylogs.write_to_logfile(pylogs_filepointer,
+				"Not downloading files -> self.logged_in: " + str(self.logged_in) +
 				"; course_number_URL: " + course_number_URL + "; download_files: " +
 				str(download_files)
 			)
@@ -995,9 +1012,9 @@ class crawler:
 			curricula_return_list.append(sempreconinfo_list)
 		return curricula_return_list
 
-	def close_driver(self, driver):
+	def close_driver(self, driver, pylogs_filepointer):
 		'''Close the webdriver properly.'''
-		print ('closing driver')
+		pylogs.write_to_logfile(pylogs_filepointer, "closing driver")
 
 		driver.close()	# close the current browser window
 		driver.quit()	# calls driver.dispose which closes all the browser windows and ends the webdriver session properly

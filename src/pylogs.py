@@ -48,4 +48,5 @@ def dump_to_log(logfile_file_path, log_message):
 
 def close_logfile(file_pointer):
 	'''close a logfile properly'''
+	write_to_logfile(file_pointer, "closing log: " + os.path.basename(file_pointer.name))
 	file_pointer.close()
