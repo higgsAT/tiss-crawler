@@ -3,8 +3,18 @@
 
 import mysql.connector as database
 
-# DB login credentials
-from config import *
+from pathlib import Path
+import sys
+# load sql login credentials from an external file
+my_file = Path("src/config.py")
+
+# default ones for the tests (github CI).
+dbLoginUser = ""
+dbLoginPassword = ""
+dbHostURL = ""
+
+if my_file.is_file():
+	from config import *
 
 class SqlHandler:
 	"""This class handles access to the SQL server (connection, data manipulation, etc.).
@@ -27,7 +37,7 @@ class SqlHandler:
 		self.sql_login_password	= dbLoginPassword # loginCredentials.loginData["password"]
 		self.sql_login_host		= dbHostURL # loginCredentials.loginData["host"]
 
-	def fetch_all_db(self, verbose):
+	def fetch_all_db(self, verbose = False):
 		"""Retrieve / list all existing databases.
 
 		For the given SQL server connection, this function
@@ -46,13 +56,13 @@ class SqlHandler:
 		connection.close()
 
 		# print all found databases (to the terminal)
-		if verbose == 1:
+		if verbose == True:
 			for row in return_all_db:
 				print (row['Database'])
 
 		return return_all_db
 
-	def fetch_all_tables(self, select_database, verbose):
+	def fetch_all_tables(self, select_database, verbose = False):
 		"""Retrieve all tables from a given DB on the SQL server.
 
 		For a given database, this function returns all tables
@@ -68,16 +78,67 @@ class SqlHandler:
 
 		cursor.execute("SHOW TABLES")
 		return_all_tables = cursor.fetchall()
+		return_tables_function = []
 
 		connection.close()
 
-		if verbose == 1:
-			for row in return_all_tables:
+		for row in return_all_tables:
+			if type(row['Tables_in_' + select_database]) == bytearray:
+				#check_table_entry = i['Tables_in_'+select_database].decode('utf-8')
+				row['Tables_in_' + select_database] = row['Tables_in_' + select_database].decode('utf-8')
+			if verbose == True:
 				print (row['Tables_in_' + select_database])
+			return_tables_function.append(row['Tables_in_' + select_database])
 
-		return return_all_tables
+		return return_tables_function
 
-	def fetch_table_content(self, select_database, select_table, verbose):
+	def fetch_table_content(self, select_database, select_table, verbose = False):
+		"""Fetch data from a given table for a selected database and table.
+
+		For a given database and table on a SQL server, this
+		function returns all the containing informations
+		(e.g., row/column data, etc.). The verbose option
+		prints the retrieved information to the terminal.
+		"""
+		connection = database.connect(
+			user = self.sql_login_user,
+			password = self.sql_login_password,
+			host = self.sql_login_host,
+			database = select_database)
+		cursor = connection.cursor()
+
+		# fetch/print the header (table column names)
+		cursor.execute("SHOW COLUMNS FROM " + select_table)
+		return_table_header_data = cursor.fetchall()
+
+		if verbose == True:
+			for row in return_table_header_data:
+				print(f"{row[0]:>20} ", end = '')
+			print('\n---------------------------------------------------')
+
+		# fetch/print the table column data
+		cursor.execute("SELECT * FROM " + select_table)
+		return_table_contents = cursor.fetchall()
+
+		connection.close()
+
+		if verbose == True:
+			for i in range(len(return_table_contents)):
+				print(return_table_contents[i])
+				#print(f"{str(return_table_contents[0][i]):>20} ", end = '')
+
+		return return_table_contents, return_table_header_data
+
+
+	def select_table_content(
+		self,
+		select_database,
+		select_table,
+		sql_values,
+		sql_where,
+		sql_select,
+		verbose = False
+	):
 		"""Fetch data from a given table for a selected database and table.
 
 		For a given database and table on a SQL server, this
@@ -97,29 +158,32 @@ class SqlHandler:
 			database = select_database)
 		cursor = connection.cursor()
 
-		# fetch/print the header (table column names)
-		cursor.execute("SHOW COLUMNS FROM " + select_table)
-		return_table_header_data = cursor.fetchall()
+		# sanity check on the existance of the table
+		all_tables = self.fetch_all_tables(select_database, 0)
+		table_exists = False
 
-		if verbose == 1:
-			for row in return_table_header_data:
-				print(f"{row[0]:>20} ", end = '')
-			print('\n---------------------------------------------------')
+		for i in all_tables:
+			if i == select_table:
+				table_exists = True
+				break
 
-		# fetch/print the table column data
-		cursor.execute("SELECT * FROM " + select_table)
-		return_table_contents = cursor.fetchall()
+		# table found -> proceed with the query
+		if table_exists == True:
+			sql_query = sql_select + select_table + sql_where
+			cursor.execute(sql_query, sql_values)
+			result = cursor.fetchall()
+			connection.close()
 
-		connection.close()
+			for x in result:
+				  print(x)
 
-		if verbose == 1:
-			for i in range(len(return_table_contents)):
-				print(return_table_contents[i])
-				#print(f"{str(return_table_contents[0][i]):>20} ", end = '')
+			print(str(len(result)))
+		else:
+			print("select_table_content: table '", select_table, "' is not in the DB")
 
-		return return_table_contents, return_table_header_data
+		return result
 
-	def insert_into_table(self, select_database, insert_statement, insert_data, verbose):
+	def insert_into_table(self, select_database, insert_statement, insert_data, verbose = False):
 		"""Insert data into a table of a database.
 
 		This functions inserts data (insert_data) into a table
@@ -134,7 +198,10 @@ class SqlHandler:
 			database = select_database)
 		cursor = connection.cursor()
 
-		if verbose == 1:
+		# TODO: check, whether the table exists at all or this will raise an error at the moment
+		# insertStatement must be changed for that
+
+		if verbose == True:
 			print("inserting into db: ", select_database,
 			": statement: ", insert_statement,
 			"; insertdata: ", insert_data)
@@ -143,7 +210,7 @@ class SqlHandler:
 		connection.commit()
 		connection.close()
 
-	def create_table(self, select_database, table_name, column_info):
+	def create_table(self, select_database, table_name, column_info, verbose = False):
 		"""Create a new table.
 
 		With the columns as given by column_info this function
@@ -162,15 +229,22 @@ class SqlHandler:
 		table_exists = False
 
 		for i in all_tables:
-			if i['Tables_in_'+select_database] == table_name:
-				print('table', table_name, "already exists in the DB")
+			if verbose == True:
+				print("checking table: " + i)
+
+			if i == table_name:
+				if verbose == True:
+					print("create_table: table '" + table_name + "' already exists in the DB")
 				table_exists = True
 				break
 
 		if table_exists == False:
 			cursor.execute("CREATE TABLE " + table_name + " (" + column_info + ")")
+			if verbose == True:
+				print("table '" + table_name + "' created")
 
 		connection.close()
+		return table_exists
 
 	def drop_table(self, select_database, delete_table):
 		'''This function deletes a table from a selected database.'''
@@ -180,8 +254,22 @@ class SqlHandler:
 			host = self.sql_login_host,
 			database = select_database)
 		cursor = connection.cursor()
-		sql = "DROP TABLE " + delete_table
-		cursor.execute(sql) 
+
+		# check, whether the table to be deleted exists in the DB
+		all_tables = self.fetch_all_tables(select_database, 0)
+		table_exists = False
+
+		for i in all_tables:
+			if i['Tables_in_'+select_database] == delete_table:
+				table_exists = True
+				break
+
+		if table_exists == True:
+			sql = "DROP TABLE " + delete_table
+			cursor.execute(sql)
+		else:
+			print('drop_table: table', delete_table, "not found in the DB")
+
 		connection.close()
 
 	def truncate_table(self, select_database, truncate_table):
@@ -199,7 +287,7 @@ class SqlHandler:
 			database = select_database)
 		cursor = connection.cursor()
 		sql = "TRUNCATE TABLE " + truncate_table
-		cursor.execute(sql) 
+		cursor.execute(sql)
 		connection.close()
 
 	def export_table(self, path, append_only, export_db, export_table):

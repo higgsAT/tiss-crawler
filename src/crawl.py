@@ -535,6 +535,8 @@ class crawler:
 				# the last entry is optional
 				if len(quickinfo_split) > 4:
 					extract_dict["add_info"] = quickinfo_split[4].strip()
+				else:
+					extract_dict["add_info"]  = ""
 
 				# certain sections may be present multiple times in the page. Therefore, count
 				# how many times they are present and add the integer count to the dict index.
@@ -543,7 +545,7 @@ class crawler:
 				count_entry_dict["Weitere Informationen"] = 0
 
 				# language dict so that en and de versions have the same index in
-				# the returned dict.
+				# the returned dict. This is for insertion into the database.
 				index_dict_en = {
 					"Properties": "Merkmale",
 					"Learning outcomes": "Lernergebnisse",
@@ -655,7 +657,7 @@ class crawler:
 					add_info_flag = False
 					if header_titletext == "Weitere Informationen":
 						add_info_flag = True
-						past_entries = count_entry_dContinuict["Weitere Informationen"]
+						past_entries = count_entry_dict["Weitere Informationen"]
 
 						extract_dict[header_titletext + str(past_entries)] = extract_info.replace('\n', '').strip()
 						extract_info = ""
@@ -833,7 +835,7 @@ class crawler:
 
 							download_link = download_source_extract[:download_source_extract.find('"')]
 							driver.execute_script(download_link)
-							time.sleep(random.uniform(0.25, 2.0))
+							time.sleep(random.uniform(1.0, 5.0))
 
 							i_amount_downloads += 1
 
