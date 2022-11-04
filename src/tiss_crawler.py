@@ -12,25 +12,6 @@ import crawl
 import pylogs
 import sqlhandler
 
-#
-sqlhandlerObj = sqlhandler.SqlHandler()
-
-academic_program_name = "Architektur"
-
-sql_where = " WHERE page_fetch_lang = %s AND `course number` = %s"
-sql_select = "SELECT * FROM "
-#sql_query = "SELECT * FROM " + academic_program_name + " WHERE page_fetch_lang = %s AND `course number` = %s"
-sql_values = ("de", "253.G70")
-getTableData = sqlhandlerObj.select_table_content(dbDatabase, academic_program_name, sql_values, sql_where, sql_select)
-
-
-
-#print(getTableData)
-#print(str(len(getTableData)))
-
-sys.exit()
-#
-
 """
 Two main logfiles:
 a) queued_courses.txt: Contains links to single courses
@@ -106,70 +87,83 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 		# check if the data is already in the DB, which would be true
 		# in case the program was interruped without finishing a course
 		# completely
-		getTableData = sqlhandlerObj.fetch_table_content(dbDatabase, academic_program_name)
-
-		arr = np.array(getTableData[0], dtype = object)
-
-		print(arr)
-		sys.exit()
-
-
-		# perform the insertion into the DB
-		insertStatement = (
-			"INSERT INTO " + academic_program_name + " (page_fetch_lang, \
-			`course number`, `course title`, semester, type, sws, ECTS, \
-			add_info, Merkmale, `Weitere Informationen`, \
-			`Inhalt der Lehrveranstaltung`, Methoden, Prüfungsmodus, \
-			Leistungsnachweis, LVA_Anmeldung, Literatur, Vorkenntnisse, \
-			`Vorausgehende Lehrveranstaltungen`, `Vortragende Personen`, \
-			Sprache, Institut, Gruppentermine, Prüfungen, Gruppen_Anmeldung, \
-			`LVA Termine`, Curricula, `Ziele der Lehrveranstaltung`, Lernergebnisse) "
-			"VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, \
-			%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-		)
-
-		if chosen_semester_dict["Vortragende Personen"] != "":
-			joined_lecturers = "|".join(chosen_semester_dict["Vortragende Personen"])
-		else:
-			joined_lecturers = "None"
-
 		page_fetch_lang = str(chosen_semester_dict.get("page_fetch_lang"))
 		course_number = str(chosen_semester_dict.get("course number"))
-		course_title = str(chosen_semester_dict.get("course title"))
 		semester = str(chosen_semester_dict.get("semester"))
-		lecture_type = str(chosen_semester_dict.get("type"))
-		sws = str(chosen_semester_dict.get("sws"))
-		ects = str(chosen_semester_dict.get("ECTS"))
-		add_info = str(chosen_semester_dict.get("add_info"))
-		properties = str(chosen_semester_dict.get("Merkmale"))
-		additional_information = str(chosen_semester_dict.get("Weitere Informationen0"))
-		subject_of_course = str(chosen_semester_dict.get("Inhalt der Lehrveranstaltung"))
-		methods = str(chosen_semester_dict.get("Methoden"))
-		mode_of_examination = str(chosen_semester_dict.get("Prüfungsmodus"))
-		examination_modalities = str(chosen_semester_dict.get("Leistungsnachweis"))
-		course_registration = str(chosen_semester_dict.get("LVA-Anmeldung"))
-		literature = str(chosen_semester_dict.get("Literatur"))
-		previous_knowledge = str(chosen_semester_dict.get("Vorkenntnisse"))
-		preceding_courses = str(chosen_semester_dict.get("Vorausgehende Lehrveranstaltungen"))
-		lecturers = joined_lecturers
-		language = str(chosen_semester_dict.get("Sprache"))
-		institute = str(chosen_semester_dict.get("Institut"))
-		group_dates = str(chosen_semester_dict.get("Gruppentermine"))
-		exams = str(chosen_semester_dict.get("Prüfungen"))
-		group_registration = str(chosen_semester_dict.get("Gruppen-Anmeldung"))
-		course_dates = str(chosen_semester_dict.get("LVA Termine"))
-		curricula = str(chosen_semester_dict.get("Curricula"))
-		aim_of_the_course = str(chosen_semester_dict.get("Ziele der Lehrveranstaltung"))
-		learning_outcomes = str(chosen_semester_dict.get("Lernergebnisse"))
 
-		insertData = (page_fetch_lang, course_number, course_title, semester,
-			lecture_type, sws, ects, add_info, properties, additional_information,
-			subject_of_course, methods, mode_of_examination, examination_modalities,
-			course_registration, literature, previous_knowledge, preceding_courses,
-			lecturers, language, institute, group_dates, exams, group_registration,
-			course_dates, curricula, aim_of_the_course, learning_outcomes)
+		sql_where = " WHERE page_fetch_lang = %s AND `course number` = %s AND semester = %s"
+		sql_select = "SELECT * FROM "
+		sql_values = (page_fetch_lang, course_number, semester)
+		amount_of_datasets_in_DB = sqlhandlerObj.select_query(
+			dbDatabase,
+			academic_program_name,
+			sql_values,
+			sql_where,
+			sql_select
+		)
 
-		sqlhandlerObj.insert_into_table(dbDatabase, insertStatement, insertData, 0)
+		if amount_of_datasets_in_DB > 0:
+			pylogs.write_to_logfile(f_runtime_log,
+				"Entry '" + page_fetch_lang + "|" + course_number +
+				"|" + semester + "' is already in the DB"
+			)
+		else:
+			# perform the insertion into the DB
+			insertStatement = (
+				"INSERT INTO " + academic_program_name + " (page_fetch_lang, \
+				`course number`, `course title`, semester, type, sws, ECTS, \
+				add_info, Merkmale, `Weitere Informationen`, \
+				`Inhalt der Lehrveranstaltung`, Methoden, Prüfungsmodus, \
+				Leistungsnachweis, LVA_Anmeldung, Literatur, Vorkenntnisse, \
+				`Vorausgehende Lehrveranstaltungen`, `Vortragende Personen`, \
+				Sprache, Institut, Gruppentermine, Prüfungen, Gruppen_Anmeldung, \
+				`LVA Termine`, Curricula, `Ziele der Lehrveranstaltung`, Lernergebnisse) "
+				"VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, \
+				%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+			)
+
+			if chosen_semester_dict["Vortragende Personen"] != "":
+				joined_lecturers = "|".join(chosen_semester_dict["Vortragende Personen"])
+			else:
+				joined_lecturers = "None"
+
+			page_fetch_lang = str(chosen_semester_dict.get("page_fetch_lang"))
+			course_number = str(chosen_semester_dict.get("course number"))
+			course_title = str(chosen_semester_dict.get("course title"))
+			semester = str(chosen_semester_dict.get("semester"))
+			lecture_type = str(chosen_semester_dict.get("type"))
+			sws = str(chosen_semester_dict.get("sws"))
+			ects = str(chosen_semester_dict.get("ECTS"))
+			add_info = str(chosen_semester_dict.get("add_info"))
+			properties = str(chosen_semester_dict.get("Merkmale"))
+			additional_information = str(chosen_semester_dict.get("Weitere Informationen0"))
+			subject_of_course = str(chosen_semester_dict.get("Inhalt der Lehrveranstaltung"))
+			methods = str(chosen_semester_dict.get("Methoden"))
+			mode_of_examination = str(chosen_semester_dict.get("Prüfungsmodus"))
+			examination_modalities = str(chosen_semester_dict.get("Leistungsnachweis"))
+			course_registration = str(chosen_semester_dict.get("LVA-Anmeldung"))
+			literature = str(chosen_semester_dict.get("Literatur"))
+			previous_knowledge = str(chosen_semester_dict.get("Vorkenntnisse"))
+			preceding_courses = str(chosen_semester_dict.get("Vorausgehende Lehrveranstaltungen"))
+			lecturers = joined_lecturers
+			language = str(chosen_semester_dict.get("Sprache"))
+			institute = str(chosen_semester_dict.get("Institut"))
+			group_dates = str(chosen_semester_dict.get("Gruppentermine"))
+			exams = str(chosen_semester_dict.get("Prüfungen"))
+			group_registration = str(chosen_semester_dict.get("Gruppen-Anmeldung"))
+			course_dates = str(chosen_semester_dict.get("LVA Termine"))
+			curricula = str(chosen_semester_dict.get("Curricula"))
+			aim_of_the_course = str(chosen_semester_dict.get("Ziele der Lehrveranstaltung"))
+			learning_outcomes = str(chosen_semester_dict.get("Lernergebnisse"))
+
+			insertData = (page_fetch_lang, course_number, course_title, semester,
+				lecture_type, sws, ects, add_info, properties, additional_information,
+				subject_of_course, methods, mode_of_examination, examination_modalities,
+				course_registration, literature, previous_knowledge, preceding_courses,
+				lecturers, language, institute, group_dates, exams, group_registration,
+				course_dates, curricula, aim_of_the_course, learning_outcomes)
+
+			sqlhandlerObj.insert_into_table(dbDatabase, insertStatement, insertData, 0)
 
 def process_courses(acad_course_list, academic_program_name, pylogs_filepointer):
 	"""Extract desired information for each course.
@@ -246,8 +240,6 @@ def process_courses(acad_course_list, academic_program_name, pylogs_filepointer)
 		pylogs.write_to_logfile(f_runtime_log, 'folder "' + root_dir + loggin_folder +
 			academic_program_name + '" exists')
 
-	i = 0
-
 	for process_course in acad_course_list[:]:
 		# process the course
 		return_info_dict, ret_dwnlds, ret_crawls, unknown_fields = driver_instance.extract_course_info(
@@ -283,14 +275,6 @@ def process_courses(acad_course_list, academic_program_name, pylogs_filepointer)
 		for i in range(len(acad_course_list)):
 			f.write(acad_course_list[i] + "|" + academic_program_name + "\n")
 		f.close()
-
-		if i == 1:
-			print("STOPPP")
-			sys.exit()
-
-		i +=1
-		print("i: " + str(i))
-
 
 # logfiles
 f_runtime_log = pylogs.open_logfile(root_dir + loggin_folder + "runtime_log_" + pylogs.get_time())

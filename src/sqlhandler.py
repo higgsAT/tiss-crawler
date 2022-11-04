@@ -4,7 +4,7 @@
 import mysql.connector as database
 
 from pathlib import Path
-import sys
+
 # load sql login credentials from an external file
 my_file = Path("src/config.py")
 
@@ -130,7 +130,7 @@ class SqlHandler:
 		return return_table_contents, return_table_header_data
 
 
-	def select_table_content(
+	def select_query(
 		self,
 		select_database,
 		select_table,
@@ -139,17 +139,9 @@ class SqlHandler:
 		sql_select,
 		verbose = False
 	):
-		"""Fetch data from a given table for a selected database and table.
+		"""Perform a SELECT query on a table and return results.
 
-		For a given database and table on a SQL server, this
-		function returns all the containing informations
-		(e.g., row/column data, etc.). The verbose option
-		prints the retrieved information to the terminal.
-		"""
-
-		"""
-		TODO: change this function so it can only fetch a certain amount of data as well as
-		only retrieve the column types ("SHOW COLUMNS ...")
+		This function returns the amount of rows from a query.
 		"""
 		connection = database.connect(
 			user = self.sql_login_user,
@@ -173,15 +165,10 @@ class SqlHandler:
 			cursor.execute(sql_query, sql_values)
 			result = cursor.fetchall()
 			connection.close()
-
-			for x in result:
-				  print(x)
-
-			print(str(len(result)))
 		else:
 			print("select_table_content: table '", select_table, "' is not in the DB")
 
-		return result
+		return len(result)
 
 	def insert_into_table(self, select_database, insert_statement, insert_data, verbose = False):
 		"""Insert data into a table of a database.
