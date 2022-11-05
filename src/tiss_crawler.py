@@ -165,7 +165,7 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 
 			sqlhandlerObj.insert_into_table(dbDatabase, insertStatement, insertData, 0)
 
-def process_courses(acad_course_list, academic_program_name, pylogs_filepointer):
+def process_courses(acad_course_list, academic_program_name, pylogs_filepointer, f_failed_downloads):
 	"""Extract desired information for each course.
 
 	This function takes a list of URLs pointing to courses
@@ -247,10 +247,9 @@ def process_courses(acad_course_list, academic_program_name, pylogs_filepointer)
 			process_course,
 			academic_program_name,
 			pylogs_filepointer,
-			False
+			f_failed_downloads,
+			True
 		)
-
-		print("\n\nreturn_info_dict: ")
 
 		# update amount of downloads and page crawls
 		total_downloaded_files += ret_dwnlds
@@ -280,6 +279,7 @@ def process_courses(acad_course_list, academic_program_name, pylogs_filepointer)
 f_runtime_log = pylogs.open_logfile(root_dir + loggin_folder + "runtime_log_" + pylogs.get_time())
 f_runtime_stats = pylogs.open_logfile(root_dir + loggin_folder + "runtime_stats_" + pylogs.get_time())
 f_runtime_unknowns = pylogs.open_logfile(root_dir + loggin_folder + "unkown_field_stats_" + pylogs.get_time())
+f_failed_downloads = pylogs.open_logfile(root_dir + loggin_folder + "failed_download_stats_" + pylogs.get_time())
 
 pylogs.write_to_logfile(f_runtime_log, "starting program")
 pylogs.write_to_logfile(f_runtime_log, "runtime logfile for stats: " + os.path.basename(f_runtime_stats.name))
@@ -299,7 +299,7 @@ driver = driver_instance.init_driver()
 
 # log in to get more semesters in the academic program
 # which results in more courses found.
-#driver_instance.tiss_login(driver)
+driver_instance.tiss_login(driver)
 
 # check the state of eventual previous crawls
 if not os.path.exists(logging_folder):
@@ -368,7 +368,7 @@ pylogs.write_to_logfile(f_runtime_log, str(len(acad_course_list)) + " queued cou
 # no academic programs in the logfile but courses, process these files
 # first. This case should never catch.
 if len(acad_course_list) > 0 and len(acad_program_list) == 0:
-	process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log)
+	process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log, f_failed_downloads)
 
 # continue/start crawling
 for process_acad_prgm in acad_program_list[:]:
@@ -396,7 +396,7 @@ for process_acad_prgm in acad_program_list[:]:
 	f.close()
 
 	# extract course information for the academic course´
-	process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log)
+	process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log, f_failed_downloads)
 
 	# remove the processed entry from acad_program_list
 	acad_program_list.remove(process_acad_prgm)
@@ -410,3 +410,6 @@ for process_acad_prgm in acad_program_list[:]:
 
 driver_instance.close_driver(driver, f_runtime_log)
 pylogs.close_logfile(f_runtime_log)
+pylogs.close_logfile(f_runtime_stats)
+pylogs.close_logfile(f_runtime_unknowns)
+pylogs.close_logfile(f_failed_downloads)

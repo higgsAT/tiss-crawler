@@ -155,13 +155,13 @@ class crawler:
 		language_de_find = driver.page_source.find("language_de")
 		language_de_find2 = driver.page_source.find('<a href="/?locale=de">Deutsch</a>')
 
-		if (language_en_find != -1 or language_en_find != -1):
+		if (language_en_find != -1 or language_en_find2 != -1):
 			language = "de"
 		elif (language_de_find != -1 or language_de_find2 != -1):
 			language = "en"
 		else:
-			# increase wait time to ensure page loading!
-			print("unable to determine language - increase page loading")
+			# TODO: increase wait time to ensure page loading / retry!
+			print("unable to determine language")
 			language = ""
 
 		return language
@@ -178,13 +178,27 @@ class crawler:
 		"""
 		set_language = self.get_language(driver)
 
-		if (set_language == "de"):
+		# different needles for different pages
+		language_en_find = driver.page_source.find("language_en")
+		language_en_find2 = driver.page_source.find('<a href="/?locale=en">English</a>')
+
+		language_de_find = driver.page_source.find("language_de")
+		language_de_find2 = driver.page_source.find('<a href="/?locale=de">Deutsch</a>')
+
+		if (set_language == "de" and language_en_find != -1):
 			driver.find_element("id", "language_en").click()
-
 			self.language = "en"
-		else:
-			driver.find_element("id", "language_de").click()
 
+		if (set_language == "de" and language_en_find2 != -1):
+			driver.find_element(By.XPATH,'//a[contains(@href,"/?locale=en")]').click()
+			self.language = "en"
+
+		if (set_language == "en" and language_de_find != -1):
+			driver.find_element("id", "language_de").click()
+			self.language = "de"
+
+		if (set_language == "en" and language_de_find2 != -1):
+			driver.find_element(By.XPATH,'//a[contains(@href,"/?locale=de")]').click()
 			self.language = "de"
 
 		# wait for the page to be loaded correctly (JS)
@@ -198,7 +212,7 @@ class crawler:
 		respect other interactions (e.g., select events) but since a lot relies
 		on JS to be fetched, the delay is considered inherently in these cases.
 		"""
-		t_diff = time.time() - self.last_crawltime 
+		t_diff = time.time() - self.last_crawltime
 
 		if t_diff < self.crawl_delay:
 			time.sleep(self.crawl_delay - t_diff)
@@ -381,6 +395,7 @@ class crawler:
 		URL,
 		academic_program_name,
 		pylogs_filepointer,
+		f_failed_downloads,
 		download_files = False
 	):
 		"""Process a single course and extract relevenat information.
@@ -722,7 +737,8 @@ class crawler:
 			semester_list,
 			academic_program_name,
 			download_files,
-			pylogs_filepointer
+			pylogs_filepointer,
+			f_failed_downloads
 		)
 
 		unknown_fields = list( dict.fromkeys(unknown_fields) )
@@ -737,7 +753,8 @@ class crawler:
 		semester_list,
 		academic_program_name,
 		download_files,
-		pylogs_filepointer
+		pylogs_filepointer,
+		f_failed_downloads
 	):
 		"""Download all files (for all semesters) corresponding to a course.
 
@@ -882,6 +899,10 @@ class crawler:
 							# download takes too long -> abort
 							delta_t = time.time() - time_download_start
 							if delta_t > time_abort:
+								pylogs.write_to_logfile(f_failed_downloads, "time_abort_reached for: " +
+									course_title + "; academic program: " + academic_program_name +
+									"; semester: " + semester_list_key_dict[i]
+								)
 								break
 
 							#print("max filesize: " + str(max_filesize_found/(1000*1000)))
@@ -921,6 +942,9 @@ class crawler:
 								pylogs.write_to_logfile(pylogs_filepointer,
 									'Amount of queued files and amount of downloaded files differs!'
 								)
+								pylogs.write_to_logfile(f_failed_downloads,
+									'Amount of queued files and amount of downloaded files differs!'
+								)
 
 						# clear temp folder of files in any way so that future downloads
 						# will not fail (this folder should be empty at every starting download)
@@ -951,7 +975,6 @@ class crawler:
 			)
 
 		return amount_downloads
-
 
 	def extract_course_info_lecturers(self, extract_info):
 		cutstr1 = '<span>'
