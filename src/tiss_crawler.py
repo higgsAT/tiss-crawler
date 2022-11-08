@@ -110,7 +110,7 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 		else:
 			# perform the insertion into the DB
 			insertStatement = (
-				"INSERT INTO " + academic_program_name + " (page_fetch_lang, \
+				"INSERT INTO `" + academic_program_name + "` (page_fetch_lang, \
 				`course number`, `course title`, semester, type, sws, ECTS, \
 				add_info, Merkmale, `Weitere Informationen`, \
 				`Inhalt der Lehrveranstaltung`, Methoden, Prüfungsmodus, \
@@ -163,7 +163,7 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 				lecturers, language, institute, group_dates, exams, group_registration,
 				course_dates, curricula, aim_of_the_course, learning_outcomes)
 
-			sqlhandlerObj.insert_into_table(dbDatabase, insertStatement, insertData, 0)
+			sqlhandlerObj.insert_into_table(dbDatabase, insertStatement, insertData, 1)
 
 def process_courses(acad_course_list, academic_program_name, pylogs_filepointer, f_failed_downloads):
 	"""Extract desired information for each course.
@@ -297,6 +297,9 @@ pylogs.write_to_logfile(f_runtime_log, "initiating driver")
 driver_instance = crawl.crawler(False, 800, 600, 10)
 driver = driver_instance.init_driver()
 
+# set the timeout for page loads (in units of seconds)
+driver.set_page_load_timeout(120)
+
 # log in to get more semesters in the academic program
 # which results in more courses found.
 driver_instance.tiss_login(driver)
@@ -318,7 +321,6 @@ if os.path.isfile(logging_folder + logging_academic_programs):
 		for line in file:
 			acad_program_list.append(line.rstrip())
 			pylogs.write_to_logfile(f_runtime_log, line.rstrip())
-
 else:
 	# no file containing academic programs was found -> "start at zero". Fetch
 	# all academic programs and add them to the list
@@ -370,6 +372,148 @@ pylogs.write_to_logfile(f_runtime_log, str(len(acad_course_list)) + " queued cou
 if len(acad_course_list) > 0 and len(acad_program_list) == 0:
 	process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log, f_failed_downloads)
 
+# don't process these courses
+skip_courses = [
+	"130005",
+	"130001",
+	"130002",
+	"130003",
+	"130004",
+	"134120",
+	"134125",
+	"134124",
+	"134126",
+	"103057",
+	"101679",
+	"103088",
+	"101680",
+	"103087",
+	"103091",
+	"103066",
+	"103064",
+	"103089",
+	"103058",
+	"325063",
+	"136059",
+	"135044",
+	"136015",
+	"136019",
+	"136020",
+	"134163",
+	"138010",
+	"141A71",
+	"138066",
+	"138053",
+	"153075",
+	"138017",
+	"142086",
+	"141399",
+	"142089",
+	"134514",
+	"141243",
+	"132023",
+	"134177",
+	"136026",
+	"101028",
+	"134194",
+	"138043",
+	"134161",
+	"138065",
+	"135045",
+	"141217",
+	"141032",
+	"142637",
+	"134192",
+	"133019",
+	"138056",
+	"141281",
+	"142090",
+	"141A41",
+	"134180",
+	"131058",
+	"138030",
+	"141599",
+	"253118",
+	"231038",
+	"166127",
+	"164225",
+	"141223",
+	"034004",
+	"034003",
+	"134185",
+	"141106",
+	"141721",
+	"141600",
+	"141724",
+	"141A73",
+	"141A27",
+	"387075",
+	"136076",
+	"141A45",
+	"141A22",
+	"141A21",
+	"134229",
+	"141A72",
+	"130007",
+	"130009",
+	"136007",
+	"142769",
+	"142351",
+	"136079",
+	"141A95",
+	"141A96",
+	"136084",
+	"138128",
+	"136089",
+	"136088",
+	"136090",
+	"141B25",
+	"142084",
+	"136003",
+	"132069",
+	"134133",
+	"134141",
+	"141095",
+	"138064",
+	"134155",
+	"138063",
+	"134148",
+	"133027",
+	"131028",
+	"142025",
+	"132068",
+	"131025",
+	"135024",
+	"142045",
+	"135026",
+	"135027",
+	"142026",
+	"142039",
+	"141102",
+	"132015",
+	"132037",
+	"132067",
+	"134144",
+	"134131",
+	"132039",
+	"134114",
+	"134116",
+	"141026",
+	"134135",
+	"133021",
+	"141B23",
+	"134142",
+	"134237",
+	"132013",
+	"132010",
+	"133018",
+	"133010",
+	"134132"
+]
+skip_courses = list( dict.fromkeys(skip_courses) )
+
+pylogs.write_to_logfile(f_runtime_log, "skip courses: " + str(skip_courses))
+
 # continue/start crawling
 for process_acad_prgm in acad_program_list[:]:
 	#ttps://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=57488|Architektur|Katalog Freie Wahlfächer - Architektur
@@ -383,6 +527,25 @@ for process_acad_prgm in acad_program_list[:]:
 	acad_course_list_fetch = driver_instance.extract_courses(driver, process_acad_prgm_URL)
 	pylogs.write_to_logfile(f_runtime_log, '#queued academic courses (' +
 		str(len(acad_course_list_fetch)) + "):")
+
+	# remove entries which should not be processed (from the fetched online list)
+	for i_courses_fetch in acad_course_list_fetch[:]:
+		for i_courses_skip in skip_courses:
+			check_course = ("https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=" +
+				i_courses_skip
+			)
+			if check_course == i_courses_fetch:
+				acad_course_list_fetch.remove(i_courses_fetch)
+
+	# remove skip_courses from the read file of processed courses
+	# in case the file (queued_courses.txt) contains a course to skip
+	for i_courses_fetch in acad_course_list[:]:
+		for i_courses_skip in skip_courses:
+			check_course = ("https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=" +
+				i_courses_skip
+			)
+			if check_course == i_courses_fetch:
+				acad_course_list.remove(i_courses_fetch)
 
 	# append the fetched data to the processing list, remove duplicates
 	acad_course_list.extend(acad_course_list_fetch)

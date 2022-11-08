@@ -15,6 +15,8 @@ dbHostURL = ""
 
 if my_file.is_file():
 	from config import *
+else:
+	print("could not find sql config file -> check path!")
 
 class SqlHandler:
 	"""This class handles access to the SQL server (connection, data manipulation, etc.).
@@ -161,7 +163,7 @@ class SqlHandler:
 
 		# table found -> proceed with the query
 		if table_exists == True:
-			sql_query = sql_select + select_table + sql_where
+			sql_query = sql_select + "`" + select_table + "`" + sql_where
 			cursor.execute(sql_query, sql_values)
 			result = cursor.fetchall()
 			connection.close()
@@ -226,7 +228,7 @@ class SqlHandler:
 				break
 
 		if table_exists == False:
-			cursor.execute("CREATE TABLE " + table_name + " (" + column_info + ")")
+			cursor.execute("CREATE TABLE `" + table_name + "` (" + column_info + ")")
 			if verbose == True:
 				print("table '" + table_name + "' created")
 

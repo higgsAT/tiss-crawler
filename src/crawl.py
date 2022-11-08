@@ -370,7 +370,7 @@ class crawler:
 			select.select_by_index(index)
 			time.sleep(self.sleeptime_fetchpage)
 
-			# extract all links found
+			# extract all links foundstarting downloading files
 			elems = driver.find_elements(By.XPATH, "//a[@href]")
 
 			for elem in elems:
@@ -417,7 +417,7 @@ class crawler:
 		# determine course number from the (given) URL
 		needle = "courseNr="
 		course_number_URL = URL[URL.find(needle) + len(needle):]
-		print("URL course number: " + course_number_URL)
+		#print("URL course number: " + course_number_URL)
 
 		# dict containing all the extracted information of one semester
 		extract_dict = {}
@@ -454,7 +454,7 @@ class crawler:
 		pylogs.write_to_logfile(pylogs_filepointer, 'semester_iterate_list: ' + str(semester_iterate_list))
 
 		for select_semester in range(len(semester_iterate_list)):
-			print("selecting: " + semester_iterate_list[select_semester])
+			#print("selecting: " + semester_iterate_list[select_semester])
 			select = Select(driver.find_element("name", "semesterForm:j_id_25"))
 			select.select_by_visible_text(semester_iterate_list[select_semester])
 			time.sleep(self.sleeptime_fetchpage)
@@ -469,7 +469,7 @@ class crawler:
 				else:
 					self.switch_language(driver)
 
-				print("i: " + str(i) + "  |  set language: " + self.language)
+				#print("i: " + str(i) + "  |  set language: " + self.language)
 
 				pylogs.write_to_logfile(pylogs_filepointer, 'open URL: ' + URL +
 					' | lang: ' + self.language +
@@ -483,16 +483,16 @@ class crawler:
 
 				if course_raw_info.find("Zu den Lehrunterlagen") != -1 and i == 0:
 					#pos_LU = course_raw_info.find("Zu den Lehrunterlagen")
-					print("materialsDE")
+					#print("materialsDE")
 					semester_list[selected_semester] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
-						str(course_number_URL) + "&semester=" + str(select_semester)
+						str(course_number_URL) + "&semester=" + str(semester_iterate_list[select_semester])
 					)
 					found_materials = True
 				if course_raw_info.find("Go to Course Materials") != -1 and i == 0:
 					#pos_LU = course_raw_info.find("Go to Course Materials")
-					print("materialsEN")
+					#print("materialsEN")
 					semester_list[selected_semester] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
-						str(course_number_URL) + "&semester=" + selected_semester
+						str(course_number_URL) + "&semester=" + str(semester_iterate_list[select_semester])
 					)
 					found_materials = True
 
@@ -526,7 +526,7 @@ class crawler:
 				#print("course title: |" + course_title + "|")
 				extract_dict["course title"] = course_title
 
-				pylogs.dump_to_log(academic_program_logpath + '/' + course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '.txt', course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '\n\n\n' + course_raw_info)
+				pylogs.dump_to_log(academic_program_logpath + '/' + course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title.replace("/", "") + '.txt', course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '\n\n\n' + course_raw_info)
 
 				if (course_title_download_ger == "" and self.language == "de"):
 					course_title_download_ger = course_title
@@ -593,7 +593,7 @@ class crawler:
 					pos6 = course_raw_info.find(needle6)
 					course_raw_info = course_raw_info[pos6 + len(needle6):]
 
-					print(str(i) + "########################################")
+					#print(str(i) + "########################################")
 
 					if course_raw_info.find(needle6) != -1:
 						pos7 = course_raw_info.find(needle6)
@@ -606,7 +606,7 @@ class crawler:
 					header_pos = extract_info.find(header_needle)
 					header_titletext = extract_info[:header_pos]
 
-					print(header_titletext + ":")
+					#print(header_titletext + ":")
 
 					extract_info = extract_info[header_pos + len(header_needle):]
 
@@ -615,7 +615,7 @@ class crawler:
 					extract_info = extract_info.replace(' class="bulletList"', '')
 
 					if self.language == "en":
-						print("Searching for in dict: " + header_titletext)
+						#print("Searching for in dict: " + header_titletext)
 						if header_titletext in index_dict_en:
 							header_titletext = index_dict_en[header_titletext]
 						else:
@@ -795,6 +795,8 @@ class crawler:
 			for i in range(len(semester_list_key_dict)):
 				pylogs.write_to_logfile(pylogs_filepointer, 'processing: ' + semester_list_key_dict[i])
 				materials_download_link = semester_list[semester_list_key_dict[i]]
+				process_semester = semester_list[semester_list_key_dict[i]]
+
 				if materials_download_link != "":
 					#print("semester: " + semester_list_key_dict[i] + " -> " + "download url: " + materials_download_link)
 
@@ -852,7 +854,7 @@ class crawler:
 
 							download_link = download_source_extract[:download_source_extract.find('"')]
 							driver.execute_script(download_link)
-							time.sleep(random.uniform(1.0, 5.0))
+							time.sleep(random.uniform(5.0, 10.0))
 
 							i_amount_downloads += 1
 
@@ -897,11 +899,14 @@ class crawler:
 								downloads_finished = True
 
 							# download takes too long -> abort
+							# TODO: if the download failed by any chance, the file stops downloading
+							# and progress is made, the full time_abort is used. Determine if all files
+							# are not downloading anymore (delta size check) and abort/retry in that case.
 							delta_t = time.time() - time_download_start
 							if delta_t > time_abort:
 								pylogs.write_to_logfile(f_failed_downloads, "time_abort_reached for: " +
 									course_title + "; academic program: " + academic_program_name +
-									"; semester: " + semester_list_key_dict[i]
+									"; semester: " + process_semester
 								)
 								break
 
@@ -943,7 +948,12 @@ class crawler:
 									'Amount of queued files and amount of downloaded files differs!'
 								)
 								pylogs.write_to_logfile(f_failed_downloads,
-									'Amount of queued files and amount of downloaded files differs!'
+									'Amount of queued files and amount of downloaded files differs: '+
+									course_title + "; academic program: " + academic_program_name +
+									"; semester: " + process_semester + "; downloads_finished: " +
+									str(downloads_finished) + "; i_amount_downloads: " +
+									str(i_amount_downloads) + "; amt_finished_dwnload: " +
+									str(amt_finished_dwnload)
 								)
 
 						# clear temp folder of files in any way so that future downloads
@@ -995,46 +1005,47 @@ class crawler:
 
 	def extract_course_info_curricula(self, extract_info):
 		curricula_return_list = []
+		needle = ''
 
 		if extract_info.find('semester=NEXT">') != -1:
 			needle = 'semester=NEXT">'
 		elif extract_info.find('semester=CURRENT">') != -1:
 			needle = 'semester=CURRENT">'
 		else:
-			needle = ''
 			warnings.warn("Error processing curricula")
 
-		while extract_info.find(needle) != -1:
-			pos = extract_info.find(needle)
-			extract_info = extract_info[pos + len(needle):]
+		if needle != "":
+			while extract_info.find(needle) != -1:
+				pos = extract_info.find(needle)
+				extract_info = extract_info[pos + len(needle):]
 
-			if extract_info.find(needle) != -1:
-				pos1 = extract_info.find(needle)
-				extract_info_temp = extract_info[:pos1]
-			else:
-				extract_info_temp = extract_info
+				if extract_info.find(needle) != -1:
+					pos1 = extract_info.find(needle)
+					extract_info_temp = extract_info[:pos1]
+				else:
+					extract_info_temp = extract_info
 
-			sempreconinfo_list = []
-			study_code = extract_info_temp[:extract_info_temp.find('</a>')]
-			curricula_return_list.append(study_code)
+				sempreconinfo_list = []
+				study_code = extract_info_temp[:extract_info_temp.find('</a>')]
+				curricula_return_list.append(study_code)
 
-			# Semester,	Precon.	and Info
-			for j in range(0, 3):
-				needle2 = 'td role="gridcell">'
-				pos2 = extract_info_temp.find(needle2)
-				extract_info_temp = extract_info_temp[pos2 + len(needle2):]
-				pos3 = extract_info_temp.find('</td>')
-				extract_print = extract_info_temp[:pos3]
-				# check steop condition
-				steop_str1 = 'Studieneingangs- und Orientierungsphase'
+				# Semester,	Precon.	and Info
+				for j in range(0, 3):
+					needle2 = 'td role="gridcell">'
+					pos2 = extract_info_temp.find(needle2)
+					extract_info_temp = extract_info_temp[pos2 + len(needle2):]
+					pos3 = extract_info_temp.find('</td>')
+					extract_print = extract_info_temp[:pos3]
+					# check steop condition
+					steop_str1 = 'Studieneingangs- und Orientierungsphase'
 
-				if j == 2 and (extract_print.find(steop_str1) != -1 or extract_print.find("STEOP") != -1):
-					extract_print = "STEOP"
+					if j == 2 and (extract_print.find(steop_str1) != -1 or extract_print.find("STEOP") != -1):
+						extract_print = "STEOP"
 
-				#print(extract_print + "|", end = " ")
-				sempreconinfo_list.append(extract_print)
+					#print(extract_print + "|", end = " ")
+					sempreconinfo_list.append(extract_print)
 
-			curricula_return_list.append(sempreconinfo_list)
+				curricula_return_list.append(sempreconinfo_list)
 		return curricula_return_list
 
 	def close_driver(self, driver, pylogs_filepointer):
