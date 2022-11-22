@@ -166,9 +166,10 @@ class SqlHandler:
 			sql_query = sql_select + "`" + select_table + "`" + sql_where
 			cursor.execute(sql_query, sql_values)
 			result = cursor.fetchall()
-			connection.close()
 		else:
 			print("select_table_content: table '", select_table, "' is not in the DB")
+
+		connection.close()
 
 		return len(result)
 

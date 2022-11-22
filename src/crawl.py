@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Firefox, FirefoxOptions
+from selenium.common.exceptions import NoSuchElementException
 import sys
 import time
 import warnings
@@ -36,7 +37,7 @@ class crawler:
 		self.non_headless_width = non_headless_width		# width of the browser window (if run_headless == False)
 		self.sleeptime_fetchpage = sleeptime				# used in the function fetch_page() to ensure JS has been loaded
 		self.language = ""										# set language (de/en) used by extract_course_info(...)
-		self.crawl_delay = 5.0									# crawl delay in seconds
+		self.crawl_delay = sleeptime							# crawl delay in seconds
 		self.last_crawltime = time.time()					# last time a page has been fetched (t_init = t_start)
 		self.download_path_root = download_folder			# dir for download folder (set in config.py)
 		self.download_path_temp = "temp/"					# dir where files will be downloaded temporarily
@@ -242,9 +243,16 @@ class crawler:
 
 		inner_div_content = self.verify_page_crawl(driver, page)
 
-		if inner_div_content == "":
-			# TODO: increase time, recrawl
-			pass
+		i = 2
+
+		while inner_div_content == "":
+			time.sleep(i * self.sleeptime_fetchpage)
+			driver.refresh()
+			inner_div_content = self.verify_page_crawl(driver, page)
+			i = i + 2
+			print("failed to load content -> " + str(i))
+			if i > 20:
+				break
 
 		return inner_div_content
 
@@ -394,6 +402,7 @@ class crawler:
 		driver,
 		URL,
 		academic_program_name,
+		acad_prgm_studycode,
 		pylogs_filepointer,
 		f_failed_downloads,
 		download_files = False
@@ -401,11 +410,13 @@ class crawler:
 		"""Process a single course and extract relevenat information.
 		"""
 
-		# number of processed semesters for this course (e.g., 2021W, 2021S yields 2)
+		# number of processed semesters for this course (e.g., processing: 2021W, 2021S yields 2)
 		amt_of_semesters_processed = 0
 
-		# create logging files folder path (for source files)
-		academic_program_logpath = root_dir + loggin_folder + academic_program_name
+		# create path for the source files
+		acad_program_page_sources_path = (root_dir + logging_folder +
+			academic_program_name + ' - ' + acad_prgm_studycode
+		)
 
 		# total amount of downloaded files for this course
 		amount_downloads = 0
@@ -435,7 +446,33 @@ class crawler:
 		# fetch page (to get the option informations)
 		self.fetch_page(driver, URL)
 
-		selector = Select(driver.find_element("name", "semesterForm:j_id_25"))
+		course_not_available1 = driver.page_source.find("The Course is not public in semester")
+		course_not_available2 = driver.page_source.find("Bitte wählen Sie ein anderes Semester aus")
+
+		selector_j_26 = False
+
+		if course_not_available1 == -1 and course_not_available2 == -1:
+			selector = Select(driver.find_element("name", "semesterForm:j_id_25"))
+		else:
+			# Caused by not being logged in ?! - not likely
+			# course not available, selector is therefore not to be found -> try refreshing
+			pylogs.write_to_logfile(pylogs_filepointer, 'course not available1 (' + str(course_not_available1) +
+				'); course not available2 ( ' + str(course_not_available2) + ') -> rerouting'
+			)
+			#driver.refresh()
+			#time.sleep(self.sleeptime_fetchpage)
+			driver.find_element("id", "j_id_2c:j_id_2n").click()
+			time.sleep(self.sleeptime_fetchpage)
+			#selector = Select(driver.find_element("name", "semesterForm:j_id_25"))
+
+			# reroute to selector j_id_26
+			source_selector_j_26 = driver.page_source.find("semesterForm:j_id_26")
+
+			pylogs.write_to_logfile(pylogs_filepointer, 'source_selector_j_26: ' + str(source_selector_j_26))
+
+			if source_selector_j_26 != -1:
+				selector = Select(driver.find_element("name", "semesterForm:j_id_26"))
+				selector_j_26 = True
 
 		# used for download folder names. Should always be set to german.
 		course_title_download_ger = ""
@@ -455,7 +492,18 @@ class crawler:
 
 		for select_semester in range(len(semester_iterate_list)):
 			#print("selecting: " + semester_iterate_list[select_semester])
-			select = Select(driver.find_element("name", "semesterForm:j_id_25"))
+
+			# try to fetch the select element
+			try:
+				select = Select(driver.find_element("name", "semesterForm:j_id_25"))
+			except NoSuchElementException:
+				pylogs.write_to_logfile(pylogs_filepointer, "no element j_id_25")
+
+				try:
+					select = Select(driver.find_element("name", "semesterForm:j_id_26"))
+				except NoSuchElementException:
+					pylogs.write_to_logfile(pylogs_filepointer, "no element j_id_26")
+
 			select.select_by_visible_text(semester_iterate_list[select_semester])
 			time.sleep(self.sleeptime_fetchpage)
 
@@ -526,7 +574,7 @@ class crawler:
 				#print("course title: |" + course_title + "|")
 				extract_dict["course title"] = course_title
 
-				pylogs.dump_to_log(academic_program_logpath + '/' + course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title.replace("/", "") + '.txt', course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '\n\n\n' + course_raw_info)
+				pylogs.dump_to_log(acad_program_page_sources_path + '/' + course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title.replace("/", "") + '.txt', course_number_URL + '|' + self.language + '|' + selected_semester + '|' + pylogs.get_time() + '|'+ course_title + '\n\n\n' + course_raw_info)
 
 				if (course_title_download_ger == "" and self.language == "de"):
 					course_title_download_ger = course_title
@@ -736,6 +784,7 @@ class crawler:
 			course_title_download_ger,
 			semester_list,
 			academic_program_name,
+			acad_prgm_studycode,
 			download_files,
 			pylogs_filepointer,
 			f_failed_downloads
@@ -752,6 +801,7 @@ class crawler:
 		course_title,
 		semester_list,
 		academic_program_name,
+		acad_prgm_studycode,
 		download_files,
 		pylogs_filepointer,
 		f_failed_downloads
@@ -802,17 +852,16 @@ class crawler:
 
 					download_temp_path = self.download_path_root + self.download_path_temp
 					download_move_path_courseNr = (self.download_path_root +
-						academic_program_name + "/" + course_number_URL + " " +
-						course_title + "/"
+						academic_program_name + " - " + acad_prgm_studycode +
+						"/" + course_number_URL + " " + course_title.replace("/", "-") + "/"
 					)
-					download_move_path_semester = download_move_path_courseNr + semester_list_key_dict[i] + "/"
-
-					#print("download_temp_path: " + download_temp_path)
-					#print("download_move_path_courseNr: " + download_move_path_courseNr)
-					#print("download_move_path_semester: " + download_move_path_semester)
+					download_move_path_semester = download_move_path_courseNr + \
+						semester_list_key_dict[i] + "/"
 
 					# check if the folders exist
-					check_folder = self.download_path_root + academic_program_name + "/"
+					check_folder = self.download_path_root + \
+						academic_program_name + " - " + acad_prgm_studycode + "/"
+
 					if not os.path.isdir(check_folder):
 						#print("path " + check_folder + " does not exist - create folder")
 						os.mkdir(check_folder)
@@ -844,6 +893,15 @@ class crawler:
 						i_amount_downloads = 0
 						str_download_needle = 'onclick="'
 
+						## wait for downloads to finish (and move them afterwards):
+						# count the downloads in the *temp/-folder. When All downloads are
+						# finished (no file with *.part ending), move them to the final location.
+						download_first_iteration = True
+						downloads_finished = False
+						i_downloads = 0
+						time_download_start = time.time()
+						time_abort = 1000
+
 						while download_source_raw.find(str_download_needle) != -1:
 							download_source_raw = download_source_raw[download_source_raw.find(str_download_needle) + len(str_download_needle):]
 							download_source_extract = download_source_raw[:download_source_raw.find('ui-widget"')]
@@ -854,20 +912,11 @@ class crawler:
 
 							download_link = download_source_extract[:download_source_extract.find('"')]
 							driver.execute_script(download_link)
-							time.sleep(random.uniform(5.0, 10.0))
+							time.sleep(random.uniform(10.0, 15.0))
 
 							i_amount_downloads += 1
 
 						#print("Downloads queued: " + str(i_amount_downloads))
-
-						## wait for downloads to finish (and move them afterwards):
-						# count the downloads in the *temp/-folder. When All downloads are
-						# finished (no file with *.part ending), move them to the final location.
-						download_first_iteration = True
-						downloads_finished = False
-						i_downloads = 0
-						time_download_start = time.time()
-						time_abort = 1000
 
 						# fetch all files in the /temp folder and check, whether the file ending
 						# is ".part". All these files are being downloaded at the moment.
@@ -899,9 +948,10 @@ class crawler:
 								downloads_finished = True
 
 							# download takes too long -> abort
-							# TODO: if the download failed by any chance, the file stops downloading
-							# and progress is made, the full time_abort is used. Determine if all files
-							# are not downloading anymore (delta size check) and abort/retry in that case.
+							# TODO: if the download failed by any chance (browser download stall),
+							# the file stops downloading and progress is made, the full time_abort is used.
+							# Determine if all files are not downloading anymore (delta size check) and
+							# abort/retry in that case.
 							delta_t = time.time() - time_download_start
 							if delta_t > time_abort:
 								pylogs.write_to_logfile(f_failed_downloads, "time_abort_reached for: " +
@@ -923,7 +973,8 @@ class crawler:
 							'amt_finished_dwnload: ' + str(amt_finished_dwnload) +
 							' ; amt_not_finished_dwnload: ' + str(amt_not_finished_dwnload) +
 							' ; downloads_finished: ' + str(downloads_finished) +
-							' ; time: ' + str(delta_t)
+							' ; time: ' + str(delta_t) +
+							' ; downloads queued: ' + str(i_amount_downloads)
 						)
 
 						# in case all downloads are private (e.g. only available if enrolled),

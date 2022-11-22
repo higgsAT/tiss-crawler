@@ -12,6 +12,7 @@ import crawl
 import pylogs
 import sqlhandler
 
+
 """
 Two main logfiles:
 a) queued_courses.txt: Contains links to single courses
@@ -91,23 +92,31 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 		course_number = str(chosen_semester_dict.get("course number"))
 		semester = str(chosen_semester_dict.get("semester"))
 
-		sql_where = " WHERE page_fetch_lang = %s AND `course number` = %s AND semester = %s"
-		sql_select = "SELECT * FROM "
-		sql_values = (page_fetch_lang, course_number, semester)
-		amount_of_datasets_in_DB = sqlhandlerObj.select_query(
-			dbDatabase,
-			academic_program_name,
-			sql_values,
-			sql_where,
-			sql_select
-		)
+		# search through all tables if the course is already in the DB
+		course_already_in_DB = False
+		all_sql_tables = sqlhandlerObj.fetch_all_tables(dbDatabase)
 
-		if amount_of_datasets_in_DB > 0:
-			pylogs.write_to_logfile(f_runtime_log,
-				"Entry '" + page_fetch_lang + "|" + course_number +
-				"|" + semester + "' is already in the DB"
+		for query_table in all_sql_tables:
+			sql_where = " WHERE page_fetch_lang = %s AND `course number` = %s AND semester = %s"
+			sql_select = "SELECT * FROM "
+			sql_values = (page_fetch_lang, course_number, semester)
+			amount_of_datasets_in_DB = sqlhandlerObj.select_query(
+				dbDatabase,
+				query_table,
+				sql_values,
+				sql_where,
+				sql_select
 			)
-		else:
+
+			if amount_of_datasets_in_DB > 0:
+				pylogs.write_to_logfile(f_runtime_log,
+					"Entry '" + page_fetch_lang + "|" + course_number +
+					"|" + semester + "' is already in the DB"
+				)
+				course_already_in_DB = True
+				break
+
+		if course_already_in_DB == False:
 			# perform the insertion into the DB
 			insertStatement = (
 				"INSERT INTO `" + academic_program_name + "` (page_fetch_lang, \
@@ -165,7 +174,13 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 
 			sqlhandlerObj.insert_into_table(dbDatabase, insertStatement, insertData, 1)
 
-def process_courses(acad_course_list, academic_program_name, pylogs_filepointer, f_failed_downloads):
+def process_courses(
+	acad_course_list,
+	academic_program_name,
+	acad_prgm_studycode,
+	pylogs_filepointer,
+	f_failed_downloads
+):
 	"""Extract desired information for each course.
 
 	This function takes a list of URLs pointing to courses
@@ -187,7 +202,9 @@ def process_courses(acad_course_list, academic_program_name, pylogs_filepointer,
 	global total_page_crawls
 
 	pylogs.write_to_logfile(f_runtime_log, 'processing courses: ' + str(len(acad_course_list)) +
-		'| academic program name: ' + academic_program_name)
+		'| academic program name: ' + academic_program_name + ' | academic program studycode: ' +
+		acad_prgm_studycode
+	)
 
 	# create the SQL table
 	sqlhandlerObj = sqlhandler.SqlHandler()
@@ -231,39 +248,78 @@ def process_courses(acad_course_list, academic_program_name, pylogs_filepointer,
 		print("table '" + academic_program_name + "' created")
 		pylogs.write_to_logfile(f_runtime_log, 'SQL table "' + academic_program_name + '" created')
 
-	# create folder structure where files page sourcefiles are stored
-	if not os.path.isdir(root_dir + loggin_folder + academic_program_name):
-		pylogs.write_to_logfile(f_runtime_log, 'folder "' + root_dir + loggin_folder +
+	"""
+	# create folder structure where page sourcefiles are stored
+	if not os.path.isdir(root_dir + logging_folder + academic_program_name):
+		pylogs.write_to_logfile(f_runtime_log, 'folder "' + root_dir + logging_folder +
 			academic_program_name + '" does not exist -> creating')
-		os.mkdir(root_dir + loggin_folder + academic_program_name)
+		os.mkdir(root_dir + logging_folder + academic_program_name)
 	else:
-		pylogs.write_to_logfile(f_runtime_log, 'folder "' + root_dir + loggin_folder +
+		pylogs.write_to_logfile(f_runtime_log, 'folder "' + root_dir + logging_folder +
 			academic_program_name + '" exists')
+	"""
 
 	for process_course in acad_course_list[:]:
-		# process the course
-		return_info_dict, ret_dwnlds, ret_crawls, unknown_fields = driver_instance.extract_course_info(
-			driver,
-			process_course,
-			academic_program_name,
-			pylogs_filepointer,
-			f_failed_downloads,
-			True
-		)
+		# check if the course is already in the DB, if not -> process this course.
+		# If it is found in the DB, do not process the course and just remove the
+		# entry from the list.
+		# TODO: if the (batch)insertion fails, data will be missing because insertion
+		#		  is skipped in this case!
+		temp_course_number = process_course[process_course.find('=') + 1:]
+		process_course_number = temp_course_number[:3] + "." + temp_course_number [3:]
 
-		# update amount of downloads and page crawls
-		total_downloaded_files += ret_dwnlds
-		total_page_crawls += ret_crawls
+		sqlhandlerObj2 = sqlhandler.SqlHandler()
 
-		# write info to logfiles
-		pylogs.write_to_logfile(f_runtime_stats, "downloads: " + str(total_downloaded_files))
-		pylogs.write_to_logfile(f_runtime_stats, "pages processed:  " + str(total_page_crawls))
-		pylogs.write_to_logfile(f_runtime_log, 'amount of unkown fields: ' + str(len(unknown_fields)))
-		for list_element in unknown_fields:
-			pylogs.write_to_logfile(f_runtime_unknowns, list_element)
+		course_already_in_DB = False
+		all_sql_tables = sqlhandlerObj2.fetch_all_tables(dbDatabase)
 
-		# SQL insert the returned data
-		sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_name)
+		for query_table in all_sql_tables:
+			sql_where = "WHERE `course number` = %s"
+			sql_select = "SELECT * FROM "
+			sql_values = (process_course_number, )
+			result = sqlhandlerObj2.select_query(
+				dbDatabase,
+				query_table,
+				sql_values,
+				sql_where,
+				sql_select
+			)
+
+			if result > 0:
+				pylogs.write_to_logfile(f_runtime_log, "course: " +
+					process_course_number + " found in DB(" + str(result) + "; " + str(query_table) + ") -> skip"
+				)
+				course_already_in_DB = True
+				break
+
+		if course_already_in_DB == False:
+			# process the course
+			return_info_dict, \
+			ret_dwnlds, \
+			ret_crawls, \
+			unknown_fields = driver_instance.extract_course_info(
+				driver,
+				process_course,
+				academic_program_name,
+				acad_prgm_studycode,
+				pylogs_filepointer,
+				f_failed_downloads,
+				True
+			)
+
+			# update amount of downloads and page crawls
+			total_downloaded_files += ret_dwnlds
+			total_page_crawls += ret_crawls
+
+			# write info to logfiles
+			pylogs.write_to_logfile(f_runtime_stats, "downloads: " + str(total_downloaded_files))
+			pylogs.write_to_logfile(f_runtime_stats, "pages processed:  " + str(total_page_crawls))
+			pylogs.write_to_logfile(f_runtime_log, 'amount of unkown fields: ' + str(len(unknown_fields)))
+			for list_element in unknown_fields:
+				pylogs.write_to_logfile(f_runtime_unknowns, list_element)
+
+			# SQL insert the returned data
+			sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_name)
 
 		# remove the processed entry
 		pylogs.write_to_logfile(f_runtime_log, process_course + ' processed -> remove entry')
@@ -275,26 +331,23 @@ def process_courses(acad_course_list, academic_program_name, pylogs_filepointer,
 			f.write(acad_course_list[i] + "|" + academic_program_name + "\n")
 		f.close()
 
-# logfiles
-f_runtime_log = pylogs.open_logfile(root_dir + loggin_folder + "runtime_log_" + pylogs.get_time())
-f_runtime_stats = pylogs.open_logfile(root_dir + loggin_folder + "runtime_stats_" + pylogs.get_time())
-f_runtime_unknowns = pylogs.open_logfile(root_dir + loggin_folder + "unkown_field_stats_" + pylogs.get_time())
-f_failed_downloads = pylogs.open_logfile(root_dir + loggin_folder + "failed_download_stats_" + pylogs.get_time())
+# global logfile
+f_runtime_log_global = pylogs.open_logfile(root_dir + logging_folder + "runtime_global_log_" + pylogs.get_time())
 
-pylogs.write_to_logfile(f_runtime_log, "starting program")
-pylogs.write_to_logfile(f_runtime_log, "runtime logfile for stats: " + os.path.basename(f_runtime_stats.name))
+pylogs.write_to_logfile(f_runtime_log_global, "starting program")
 
 # set folders / files
-logging_folder = "logs/"
 logging_academic_programs = "academic_programs.txt"
 logging_queued_courses = "queued_courses.txt"
-pylogs.write_to_logfile(f_runtime_log, "logging_folder: " + logging_folder)
-pylogs.write_to_logfile(f_runtime_log, "logging_academic_programs: " + logging_queued_courses)
-pylogs.write_to_logfile(f_runtime_log, "logging_queued_courses: " + logging_queued_courses)
+pylogs.write_to_logfile(f_runtime_log_global, "logging_folder: " + logging_folder)
+pylogs.write_to_logfile(f_runtime_log_global, "logging_academic_programs: " + logging_queued_courses)
+pylogs.write_to_logfile(f_runtime_log_global, "logging_queued_courses: " + logging_queued_courses)
 
 # initiate driver (instance)
-pylogs.write_to_logfile(f_runtime_log, "initiating driver")
-driver_instance = crawl.crawler(False, 800, 600, 10)
+crawl_delay = 10
+pylogs.write_to_logfile(f_runtime_log_global, "initiating driver")
+pylogs.write_to_logfile(f_runtime_log_global, "crawl_delay: " + str(crawl_delay))
+driver_instance = crawl.crawler(False, 800, 600, crawl_delay)
 driver = driver_instance.init_driver()
 
 # set the timeout for page loads (in units of seconds)
@@ -314,21 +367,21 @@ else:
 if os.path.isfile(logging_folder + logging_academic_programs):
 	# text file with (previous crawled) academic programs exists.
 	# parse this file to continue from this point onwards.
-	pylogs.write_to_logfile(f_runtime_log, 'file "' + logging_folder + logging_academic_programs + '" exists:')
+	pylogs.write_to_logfile(f_runtime_log_global, 'file "' + logging_folder + logging_academic_programs + '" exists:')
 
 	acad_program_list = []
 	with open(logging_folder + logging_academic_programs) as file:
 		for line in file:
 			acad_program_list.append(line.rstrip())
-			pylogs.write_to_logfile(f_runtime_log, line.rstrip())
+			pylogs.write_to_logfile(f_runtime_log_global, line.rstrip())
 else:
 	# no file containing academic programs was found -> "start at zero". Fetch
 	# all academic programs and add them to the list
-	pylogs.write_to_logfile(f_runtime_log, 'file "' + logging_folder + logging_academic_programs + '" does not exist')
+	pylogs.write_to_logfile(f_runtime_log_global, 'file "' + logging_folder + logging_academic_programs + '" does not exist')
 
 	# fetch all available academic programs
 	academic_program_URL = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
-	pylogs.write_to_logfile(f_runtime_log, 'fetching academic programs from ' + academic_program_URL + ':')
+	pylogs.write_to_logfile(f_runtime_log_global, 'fetching academic programs from ' + academic_program_URL + ':')
 
 	# fetch this page always in the same language (download folder names!)
 	if driver_instance.get_language(driver) != "de":
@@ -343,7 +396,7 @@ else:
 	f = open(logging_folder + logging_academic_programs, "w")
 	for i in range(len(acad_program_list)):
 		f.write(acad_program_list[i] + "\n")
-		pylogs.write_to_logfile(f_runtime_log, acad_program_list[i])
+		pylogs.write_to_logfile(f_runtime_log_global, acad_program_list[i])
 
 	f.close()
 
@@ -352,7 +405,7 @@ acad_course_list = []
 if os.path.isfile(logging_folder + logging_queued_courses):
 	# text file with (previous crawled) academic programs exists.
 	# parse this file to continue from this point onwards.
-	pylogs.write_to_logfile(f_runtime_log, 'file "' + logging_folder + logging_queued_courses + '" exists:')
+	pylogs.write_to_logfile(f_runtime_log_global, 'file "' + logging_folder + logging_queued_courses + '" exists:')
 
 	with open(logging_folder + logging_queued_courses) as file:
 		for line in file:
@@ -360,166 +413,75 @@ if os.path.isfile(logging_folder + logging_queued_courses):
 			process_acad_prgm_URL = line.rstrip().split('|')[0]
 			process_acad_prgm_name = line.rstrip().split('|')[1]
 			acad_course_list.append(process_acad_prgm_URL)
-			pylogs.write_to_logfile(f_runtime_log, line.rstrip())
+			pylogs.write_to_logfile(f_runtime_log_global, line.rstrip())
 else:
 	# no file containing academic programs was found -> "start at zero"
-	pylogs.write_to_logfile(f_runtime_log, 'file "' + logging_folder + logging_queued_courses + '" does not exist')
+	pylogs.write_to_logfile(f_runtime_log_global, 'file "' + logging_folder + logging_queued_courses + '" does not exist')
 
-pylogs.write_to_logfile(f_runtime_log, str(len(acad_course_list)) + " queued courses found")
+pylogs.write_to_logfile(f_runtime_log_global, str(len(acad_course_list)) + " queued courses found")
 
 # no academic programs in the logfile but courses, process these files
-# first. This case should never catch.
+# first. This case should never catch since an academic program gets only
+# removed if the course list is empty.
 if len(acad_course_list) > 0 and len(acad_program_list) == 0:
-	process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log, f_failed_downloads)
-
-# don't process these courses
-skip_courses = [
-	"130005",
-	"130001",
-	"130002",
-	"130003",
-	"130004",
-	"134120",
-	"134125",
-	"134124",
-	"134126",
-	"103057",
-	"101679",
-	"103088",
-	"101680",
-	"103087",
-	"103091",
-	"103066",
-	"103064",
-	"103089",
-	"103058",
-	"325063",
-	"136059",
-	"135044",
-	"136015",
-	"136019",
-	"136020",
-	"134163",
-	"138010",
-	"141A71",
-	"138066",
-	"138053",
-	"153075",
-	"138017",
-	"142086",
-	"141399",
-	"142089",
-	"134514",
-	"141243",
-	"132023",
-	"134177",
-	"136026",
-	"101028",
-	"134194",
-	"138043",
-	"134161",
-	"138065",
-	"135045",
-	"141217",
-	"141032",
-	"142637",
-	"134192",
-	"133019",
-	"138056",
-	"141281",
-	"142090",
-	"141A41",
-	"134180",
-	"131058",
-	"138030",
-	"141599",
-	"253118",
-	"231038",
-	"166127",
-	"164225",
-	"141223",
-	"034004",
-	"034003",
-	"134185",
-	"141106",
-	"141721",
-	"141600",
-	"141724",
-	"141A73",
-	"141A27",
-	"387075",
-	"136076",
-	"141A45",
-	"141A22",
-	"141A21",
-	"134229",
-	"141A72",
-	"130007",
-	"130009",
-	"136007",
-	"142769",
-	"142351",
-	"136079",
-	"141A95",
-	"141A96",
-	"136084",
-	"138128",
-	"136089",
-	"136088",
-	"136090",
-	"141B25",
-	"142084",
-	"136003",
-	"132069",
-	"134133",
-	"134141",
-	"141095",
-	"138064",
-	"134155",
-	"138063",
-	"134148",
-	"133027",
-	"131028",
-	"142025",
-	"132068",
-	"131025",
-	"135024",
-	"142045",
-	"135026",
-	"135027",
-	"142026",
-	"142039",
-	"141102",
-	"132015",
-	"132037",
-	"132067",
-	"134144",
-	"134131",
-	"132039",
-	"134114",
-	"134116",
-	"141026",
-	"134135",
-	"133021",
-	"141B23",
-	"134142",
-	"134237",
-	"132013",
-	"132010",
-	"133018",
-	"133010",
-	"134132"
-]
-skip_courses = list( dict.fromkeys(skip_courses) )
-
-pylogs.write_to_logfile(f_runtime_log, "skip courses: " + str(skip_courses))
+	#process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log, f_failed_downloads)
+	#TODO: set logging folders
+	print("academic list empty but queued courses not!");
+	sys.exit()
 
 # continue/start crawling
 for process_acad_prgm in acad_program_list[:]:
 	#ttps://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=57488|Architektur|Katalog Freie Wahlfächer - Architektur
 	process_acad_prgm_URL = process_acad_prgm.split('|')[0]
 	process_acad_prgm_name = process_acad_prgm.split('|')[1]
-	process_acad_prgm_studycode = process_acad_prgm.split('|')[2]
+	process_acad_prgm_studycode = process_acad_prgm.split('|')[2].replace("/", "-")
+
+	# store each files corresponding to an academic program in separate folders (src files and logs)
+	acad_program_path = (root_dir + logging_folder + process_acad_prgm_name +
+		' - ' + process_acad_prgm_studycode
+	)
+	acad_program_path_logs = acad_program_path + " (logs)"
+	pylogs.write_to_logfile(f_runtime_log_global, 'acad_program_path: ' + acad_program_path)
+	pylogs.write_to_logfile(f_runtime_log_global, 'acad_program_path_logs: ' + acad_program_path_logs)
+
+	# check if folders (page sources; logs) exist and if not, create them
+	if not os.path.isdir(acad_program_path):
+		pylogs.write_to_logfile(f_runtime_log_global, 'folder "' + acad_program_path +
+			'" does not exist -> creating'
+		)
+		os.mkdir(acad_program_path)
+	else:
+		pylogs.write_to_logfile(f_runtime_log_global, 'folder "' + acad_program_path +
+			'" exists'
+		)
+
+	if not os.path.isdir(acad_program_path_logs):
+		pylogs.write_to_logfile(f_runtime_log_global, 'folder "' + acad_program_path_logs +
+			'" does not exist -> creating'
+		)
+		os.mkdir(acad_program_path_logs)
+	else:
+		pylogs.write_to_logfile(f_runtime_log_global, 'folder "' + acad_program_path_logs +
+			'" exists'
+		)
+
+	# create log files for the crawl of this academic program
+	f_runtime_log = pylogs.open_logfile(acad_program_path_logs +
+		"/runtime_log_" + pylogs.get_time())
+	f_runtime_stats = pylogs.open_logfile(acad_program_path_logs +
+		"/runtime_stats_" + pylogs.get_time())
+	f_runtime_unknowns = pylogs.open_logfile(acad_program_path_logs +
+		"/unkown_field_stats_" + pylogs.get_time())
+	f_failed_downloads = pylogs.open_logfile(acad_program_path_logs +
+		"/failed_download_stats_" + pylogs.get_time())
+
+	pylogs.write_to_logfile(f_runtime_log_global, "f_runtime_log: " +
+		os.path.basename(f_runtime_log.name))
+	pylogs.write_to_logfile(f_runtime_log_global, "f_runtime_unknowns: " +
+		os.path.basename(f_runtime_unknowns.name))
+	pylogs.write_to_logfile(f_runtime_log_global, "f_failed_downloads: " +
+		os.path.basename(f_failed_downloads.name))
+
 	pylogs.write_to_logfile(f_runtime_log, "processing: " + process_acad_prgm_URL +
 		" | " + process_acad_prgm_name + " | " + process_acad_prgm_studycode)
 
@@ -527,25 +489,6 @@ for process_acad_prgm in acad_program_list[:]:
 	acad_course_list_fetch = driver_instance.extract_courses(driver, process_acad_prgm_URL)
 	pylogs.write_to_logfile(f_runtime_log, '#queued academic courses (' +
 		str(len(acad_course_list_fetch)) + "):")
-
-	# remove entries which should not be processed (from the fetched online list)
-	for i_courses_fetch in acad_course_list_fetch[:]:
-		for i_courses_skip in skip_courses:
-			check_course = ("https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=" +
-				i_courses_skip
-			)
-			if check_course == i_courses_fetch:
-				acad_course_list_fetch.remove(i_courses_fetch)
-
-	# remove skip_courses from the read file of processed courses
-	# in case the file (queued_courses.txt) contains a course to skip
-	for i_courses_fetch in acad_course_list[:]:
-		for i_courses_skip in skip_courses:
-			check_course = ("https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=" +
-				i_courses_skip
-			)
-			if check_course == i_courses_fetch:
-				acad_course_list.remove(i_courses_fetch)
 
 	# append the fetched data to the processing list, remove duplicates
 	acad_course_list.extend(acad_course_list_fetch)
@@ -559,11 +502,20 @@ for process_acad_prgm in acad_program_list[:]:
 	f.close()
 
 	# extract course information for the academic course´
-	process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log, f_failed_downloads)
+	process_courses(
+		acad_course_list,
+		process_acad_prgm_name,
+		process_acad_prgm_studycode,
+		f_runtime_log,
+		f_failed_downloads
+	)
 
 	# remove the processed entry from acad_program_list
 	acad_program_list.remove(process_acad_prgm)
-	pylogs.write_to_logfile(f_runtime_log, 'program processed (remove): ' + process_acad_prgm)
+	pylogs.write_to_logfile(f_runtime_log_global, 'program processed (remove): ' + process_acad_prgm)
+
+	total_downloaded_files = 0
+	total_page_crawls = 0
 
 	# update the logfile
 	f = open(logging_folder + logging_academic_programs, "w")
@@ -571,8 +523,14 @@ for process_acad_prgm in acad_program_list[:]:
 		f.write(acad_program_list[i] + "\n")
 	f.close()
 
+	#print(process_acad_prgm + " / " + process_acad_prgm_studycode + " done")
+	#sys.exit()
+
+	pylogs.close_logfile(f_runtime_log)
+	pylogs.close_logfile(f_runtime_stats)
+	pylogs.close_logfile(f_runtime_unknowns)
+	pylogs.close_logfile(f_failed_downloads)
+
 driver_instance.close_driver(driver, f_runtime_log)
-pylogs.close_logfile(f_runtime_log)
-pylogs.close_logfile(f_runtime_stats)
-pylogs.close_logfile(f_runtime_unknowns)
-pylogs.close_logfile(f_failed_downloads)
+f_runtime_log_global
+pylogs.close_logfile(f_runtime_log_global)
