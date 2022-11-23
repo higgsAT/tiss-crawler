@@ -42,7 +42,19 @@ def write_to_logfile(file_pointer, log_message):
 
 def dump_to_log(logfile_file_path, log_message):
 	'''dump a log message into a logfile and close the file'''
-	f = open(logfile_file_path, "w")
+
+	filename_too_long = True
+
+	# shorten the filename until no OSError (filename too long) occurs
+	while filename_too_long == True:
+		try:
+		    f = open(logfile_file_path, "w")
+		except OSError as exc:
+		    if exc.errno == 36:
+		        logfile_file_path = logfile_file_path[:-5] + "..."
+		else:
+			filename_too_long = False
+
 	f.write(log_message)
 	f.close()
 
