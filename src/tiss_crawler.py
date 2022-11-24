@@ -131,10 +131,13 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 				%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 			)
 
-			if chosen_semester_dict["Vortragende Personen"] != "":
-				joined_lecturers = "|".join(chosen_semester_dict["Vortragende Personen"])
-			else:
-				joined_lecturers = "None"
+			try:
+				if chosen_semester_dict["Vortragende Personen"] != "":
+					joined_lecturers = "|".join(chosen_semester_dict["Vortragende Personen"])
+				else:
+					joined_lecturers = "None"
+			except KeyError:
+				 joined_lecturers = "None"
 
 			page_fetch_lang = str(chosen_semester_dict.get("page_fetch_lang"))
 			course_number = str(chosen_semester_dict.get("course number"))
