@@ -243,14 +243,25 @@ class crawler:
 
 		inner_div_content = self.verify_page_crawl(driver, page)
 
+		# no page loading at all
 		i = 2
-
 		while inner_div_content == "":
 			time.sleep(i * self.sleeptime_fetchpage)
 			driver.refresh()
 			inner_div_content = self.verify_page_crawl(driver, page)
 			i = i + 2
 			print("failed to load content -> " + str(i))
+			if i > 20:
+				break
+
+		# error loading javascript
+		i = 2
+		while inner_div_content.find("Something went seriously wrong Please try refreshing the page") != -1:
+			time.sleep(i * self.sleeptime_fetchpage)
+			driver.refresh()
+			inner_div_content = self.verify_page_crawl(driver, page)
+			i = i + 2
+			print("failed to load (JS) content -> " + str(i))
 			if i > 20:
 				break
 
