@@ -358,7 +358,7 @@ class crawler:
 
 		return return_collected_data
 
-	def extract_courses(self, driver, URL):
+	def extract_courses(self, driver, URL, pylogs_filepointer):
 		"""Extract courses from the (study) program.
 
 		This function loops through all years (HTML select element)
@@ -375,7 +375,17 @@ class crawler:
 		time.sleep(self.sleeptime_fetchpage)
 
 		# selector element for year(semester) selection
-		selector = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
+		search_selector1 = driver.page_source.find("j_id_2d:semesterSelect")
+		search_selector2 = driver.page_source.find("j_id_2e:semesterSelect")
+
+		if search_selector1 != -1:
+			selector = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
+			pylogs.write_to_logfile(pylogs_filepointer, 'selected selector1: j_id_2d:semesterSelect')
+		elif search_selector2 != -1:
+			selector = Select(driver.find_element("name", "j_id_2e:semesterSelect"))
+			pylogs.write_to_logfile(pylogs_filepointer, 'selected selector1: j_id_2e:semesterSelect')
+		else:
+			pylogs.write_to_logfile(pylogs_filepointer, 'no selector1 found (2d/2e)')
 
 		extracted_course_URLs = []
 
@@ -384,7 +394,19 @@ class crawler:
 
 		# loop through all semesters and store all links to the courses
 		for index in range(len(selector.options)):
-			select = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
+			search_selector1 = driver.page_source.find("j_id_2d:semesterSelect")
+			search_selector2 = driver.page_source.find("j_id_2e:semesterSelect")
+
+			if search_selector1 != -1:
+				#selector = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
+				pylogs.write_to_logfile(pylogs_filepointer, 'selected selector2: j_id_2d:semesterSelect')
+				select = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
+			elif search_selector2 != -1:
+				selector = Select(driver.find_element("name", "j_id_2e:semesterSelect"))
+				pylogs.write_to_logfile(pylogs_filepointer, 'selected selector2: j_id_2e:semesterSelect')
+				select = Select(driver.find_element("name", "j_id_2e:semesterSelect"))
+			else:
+				pylogs.write_to_logfile(pylogs_filepointer, 'no selector2 found (2d/2e)')
 
 			select.select_by_index(index)
 			time.sleep(self.sleeptime_fetchpage)
@@ -463,7 +485,16 @@ class crawler:
 		selector_j_26 = False
 
 		if course_not_available1 == -1 and course_not_available2 == -1:
-			selector = Select(driver.find_element("name", "semesterForm:j_id_25"))
+			source_selector_j25 = driver.page_source.find("semesterForm:j_id_25")
+			source_selector_j26 = driver.page_source.find("semesterForm:j_id_26")
+
+			if source_selector_j25 != -1:
+				selector = Select(driver.find_element("name", "semesterForm:j_id_25"))
+			elif source_selector_j26 != -1:
+				selector = Select(driver.find_element("name", "semesterForm:j_id_26"))
+			else:
+				print("neither j_id_25 nor j_id_26 selector was found")
+
 		else:
 			# Caused by not being logged in ?! - not likely
 			# course not available, selector is therefore not to be found -> try refreshing
@@ -523,10 +554,14 @@ class crawler:
 			# get both languages
 			for i in range(0, 2):
 				# always start with the same language (download folder name)
+				if i == 1:
+					self.switch_language(driver)
+				"""
 				if i == 0 and self.language != "de":
 					self.switch_language(driver)
 				else:
 					self.switch_language(driver)
+				"""
 
 				#print("i: " + str(i) + "  |  set language: " + self.language)
 
@@ -538,7 +573,7 @@ class crawler:
 				amt_of_semesters_processed += 1
 
 				# check if materials are available for download
-				found_materials = False
+				#found_materials = False
 
 				if course_raw_info.find("Zu den Lehrunterlagen") != -1 and i == 0:
 					#pos_LU = course_raw_info.find("Zu den Lehrunterlagen")
@@ -546,14 +581,14 @@ class crawler:
 					semester_list[selected_semester] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
 						str(course_number_URL) + "&semester=" + str(semester_iterate_list[select_semester])
 					)
-					found_materials = True
+					#found_materials = True
 				if course_raw_info.find("Go to Course Materials") != -1 and i == 0:
 					#pos_LU = course_raw_info.find("Go to Course Materials")
 					#print("materialsEN")
 					semester_list[selected_semester] = ("https://tiss.tuwien.ac.at/education/course/documents.xhtml?courseNr=" +
 						str(course_number_URL) + "&semester=" + str(semester_iterate_list[select_semester])
 					)
-					found_materials = True
+					#found_materials = True
 
 				# clear all data in the dict
 				extract_dict = {}
@@ -575,6 +610,10 @@ class crawler:
 					warnings.warn("Error mismatching course numbers: " +
 						course_number.replace('.', '') + " and " + course_number_URL
 					)
+					print("FP1: " + course_raw_info)
+					time.sleep(30)
+					course_raw_info = self.fetch_page(driver, URL)
+					print("FP2: " + course_raw_info)
 
 				course_raw_info = course_raw_info[pos2 + len(needle2):]
 				#print(course_raw_info)
@@ -619,7 +658,7 @@ class crawler:
 				count_entry_dict["Weitere Informationen"] = 0
 
 				# language dict so that en and de versions have the same index in
-				# the returned dict. This is for insertion into the database.
+				# the returned dict. This is essential for insertion into the database
 				index_dict_en = {
 					"Properties": "Merkmale",
 					"Learning outcomes": "Lernergebnisse",

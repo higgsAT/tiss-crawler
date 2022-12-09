@@ -171,7 +171,7 @@ class SqlHandler:
 
 		connection.close()
 
-		return len(result)
+		return result
 
 	def insert_into_table(self, select_database, insert_statement, insert_data, verbose = False):
 		"""Insert data into a table of a database.
