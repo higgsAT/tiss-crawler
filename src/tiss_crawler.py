@@ -370,30 +370,6 @@ def process_courses(
 			f.write(acad_course_list[i] + "|" + academic_program_name + "\n")
 		f.close()
 
-
-
-
-
-
-"""
-# extract course information for the academic course´
-process_courses(
-	acad_course_list,
-	"Maschinenbau",
-	"Masterstudium Maschinenbau",
-	f_runtime_log_global,
-	f_failed_downloads
-)
-"""
-
-
-
-
-
-
-
-
-
 # global logfile
 f_runtime_log_global = pylogs.open_logfile(root_dir + logging_folder + "runtime_global_log_" + pylogs.get_time())
 

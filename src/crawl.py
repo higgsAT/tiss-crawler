@@ -548,6 +548,30 @@ class crawler:
 		for select_semester in range(len(semester_iterate_list)):
 			#print("selecting: " + semester_iterate_list[select_semester])
 
+			"""
+			Sometimes the course is not available ("the course is not public in this semester").
+			This can occur at any time during fetching of the options (semester) list.
+
+			In that case, select the next semester and click on "Next/Weiter". Proceed, until
+			the course becomes available.
+			"""
+			while (driver.page_source.find("Bitte wählen Sie ein anderes Semester aus") != -1 or
+				driver.page_source.find("Please select an other semester") != -1
+			):
+				pylogs.write_to_logfile(pylogs_filepointer, "skip -> " + str(select_semester) + " | " +
+					"semester_iterate_list[select_semester]:" + str(semester_iterate_list[select_semester]))
+
+				if select_semester < len(semester_iterate_list):
+					select_semester += 1
+				else:
+					break
+
+				selector_skip = Select(driver.find_element("name", "j_id_2d:j_id_2l"))
+				selector_skip.select_by_visible_text(semester_iterate_list[select_semester])
+				time.sleep(self.sleeptime_fetchpage)
+				driver.find_element("id", "j_id_2d:j_id_2o").click()
+				time.sleep(2*self.sleeptime_fetchpage)
+
 			# handling the select element
 			#
 			# determine which semesterFrom selector should be called.
