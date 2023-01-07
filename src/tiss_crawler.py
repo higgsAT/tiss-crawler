@@ -3,7 +3,6 @@
 
 import numpy as np
 import os
-import sqlhandler
 import sys
 import time
 
@@ -562,14 +561,10 @@ for process_acad_prgm in acad_program_list[:]:
 		f.write(acad_program_list[i] + "\n")
 	f.close()
 
-	#print(process_acad_prgm + " / " + process_acad_prgm_studycode + " done")
-	#sys.exit()
-
 	pylogs.close_logfile(f_runtime_log)
 	pylogs.close_logfile(f_runtime_stats)
 	pylogs.close_logfile(f_runtime_unknowns)
 	pylogs.close_logfile(f_failed_downloads)
 
-driver_instance.close_driver(driver, f_runtime_log)
-f_runtime_log_global
+driver_instance.close_driver(driver, f_runtime_log_global)
 pylogs.close_logfile(f_runtime_log_global)

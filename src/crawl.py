@@ -205,6 +205,48 @@ class crawler:
 		# wait for the page to be loaded correctly (JS)
 		time.sleep(self.sleeptime_fetchpage)
 
+	def check_course_exists(self, driver, page):
+		"""
+		"""
+
+		print ("checking page: " + page)
+
+		# try to fetch the page (retry in case an error occurs)
+		sleep_time = 30
+		amt_retries = 5
+		for x in range(0, amt_retries):
+			try:
+				driver.get(page)
+				resulting_error = None
+			except Exception as e:
+				resulting_error = str(e)
+				print ( "error" + str(resulting_error) )
+
+			if resulting_error:
+				print ( "sleeptime set to: " + str(sleep_time) )
+				time.sleep(sleep_time)
+				sleep_time *= 2
+			else:
+				break
+
+		time.sleep(self.crawl_delay)
+
+		# determine, whether the course exists or not
+		not_found_ger1 = driver.page_source.find('Ressource nicht gefunden')
+		not_found_ger2 = driver.page_source.find('Die angeforderte Ressource wurde nicht gefunden')
+
+		not_found_en1 = driver.page_source.find('Bad request')
+		not_found_en2 = driver.page_source.find('The requested resource could not be found')
+
+		course_exist = True
+
+		#print ( str(not_found_ger1) + "|" + str(not_found_ger2) + "|" + str(not_found_en1) + "|" + str(not_found_en2) )
+
+		if not_found_ger1 != -1 or not_found_ger2 != -1 or not_found_en1 != -1 or not_found_en2 != -1:
+			course_exist = False
+
+		return course_exist
+
 	def get_page(self, driver, page):
 		"""Fetch a single page while respecting time delay between crawls.
 
@@ -409,7 +451,14 @@ class crawler:
 				pylogs.write_to_logfile(pylogs_filepointer, 'no selector2 found (2d/2e)')
 
 			select.select_by_index(index)
-			time.sleep(self.sleeptime_fetchpage)
+
+			"""
+			TODO:	handle the fetching of links via a try block (or explicit wait)
+
+					In case the following wait time is to low, an error will result
+					due to the DOM elements not being attached.
+			"""
+			time.sleep(3*self.sleeptime_fetchpage)
 
 			# extract all links foundstarting downloading files
 			elems = driver.find_elements(By.XPATH, "//a[@href]")
