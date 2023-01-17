@@ -205,8 +205,93 @@ class crawler:
 		# wait for the page to be loaded correctly (JS)
 		time.sleep(self.sleeptime_fetchpage)
 
-	def check_course_exists(self, driver, page):
+	def process_acad_prgm(self, driver, process_info):
+		"""Takes the output from extract_academic_programs(...) and processes it.
+
+		Example of the variable 'process_info':
+		https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=37047|Architektur|Bachelorstudium Architektur
+
+		For this curriculum, all courses will be extracted depending on the semester and
+		year. Finally, this data is returned by the function.
 		"""
+		process_raw_data = process_info.split("|")
+		process_url = process_raw_data[0]
+		process_acad_prgm_name = process_raw_data[1]
+		process_acad_subprgm_name = process_raw_data[2]
+
+		print("process_url: " + process_url)
+		print("process_acad_prgm_name: " + process_acad_prgm_name)
+		print("process_acad_subprgm_name: " + process_acad_subprgm_name)
+
+		self.fetch_page(driver, process_url)
+
+		# The set language does not matter for the data extraction but
+		# switching to "semester-view" is done by clicking on a link which
+		# is selected by text (which is language sensitive)
+		set_language = self.get_language(driver)
+		switch_lang_search_str = "Show by semester" if set_language == "en" else "Semesteransicht"
+
+		print("SET LANG: " + set_language + "| switch_lang_search_str: " + switch_lang_search_str)
+
+		# switch to semester view
+		driver.find_element("link text", switch_lang_search_str).click()
+		time.sleep(self.sleeptime_fetchpage)
+
+		# loop through all option values (semesters)
+		# TODO: automate this selection process
+		selectorId = "j_id_2r:semesterSelect"
+		search_selector = driver.page_source.find(selectorId)
+
+		if search_selector != -1:
+			selector = Select(driver.find_element("name", selectorId))
+		else:
+			print("(semester)selector " + str(search_selector) + " not found")
+
+		# list to store all (available) option values
+		semester_list = []
+
+		# fetch all (available) option values
+		for option in selector.options:
+			semester_option_text = option.text
+			semester_option_attribute = option.get_attribute('value')
+			semester_list.append(semester_option_attribute)
+
+		print("option list:")
+		print(str(semester_list))
+		print("====")
+
+		 # loop through all found options
+		for select_semester in range(len(semester_list)):
+			# re-fetch the selector (to avoid "loose-DOM-element errors")
+			selector = Select(driver.find_element("name", selectorId))
+			selected_semester = semester_list[select_semester]
+			print("selecting: " + selected_semester)
+
+			# select the desired semester
+			selector.select_by_visible_text(selected_semester)
+			time.sleep(self.sleeptime_fetchpage)
+
+			raw_page_source = driver.page_source
+
+			# extract (academic program) course number, e.g., 033261, 033241
+			find_pos1 = raw_page_source.find(process_acad_subprgm_name)
+			course_number = raw_page_source[(find_pos1 - 8):(find_pos1 -1)]
+			print("course_number|" + str(course_number) + "|")
+
+			# write source of page into a file on disk
+			f = open(process_acad_prgm_name + "|" + process_acad_subprgm_name + "|" + selected_semester + ".txt", "w")
+			f.write(raw_page_source)
+			f.close()
+
+
+	def check_course_exists(self, driver, page):
+		"""Check, whether a link to a course exists.
+
+		The page (to be checked for existance) is defined by the
+		variable 'page', for example:
+		https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=160208
+
+		Returns 'True' or 'False', whether the course exists or not, respectively.
 		"""
 
 		print ("checking page: " + page)
