@@ -9,9 +9,15 @@ crawl_delay = 10
 driver_instance = crawl.crawler(False, 800, 600, crawl_delay)
 driver = driver_instance.init_driver()
 
+set_language = driver_instance.get_language(driver)
+
+
 
 process_acad_prgm_name = "https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=37047|Architektur|Bachelorstudium Architektur"
 driver_instance.process_acad_prgm(driver, process_acad_prgm_name)
+
+
+
 
 #####################################################################################
 driver.close()	# close the current browser window
@@ -20,16 +26,43 @@ driver.quit()	# calls driver.dispose which closes all the browser windows and en
 sys.exit()
 #####################################################################################
 
-# get a list of academic programs
+
+
+# get a list of academic programs (fetch both languages -> en/ger)
 academic_program_URL = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
-acad_program_list = driver_instance.extract_academic_programs(
+
+# language 1
+acad_program_list_lang1 = set_language
+acad_program_list1 = driver_instance.extract_academic_programs(
 	driver,
 	academic_program_URL
 )
 
+# switch language
+driver_instance.switch_language(driver)
+set_language = driver_instance.get_language(driver)
 
-for process_acad_prgm in acad_program_list:
-	print (process_acad_prgm, end = "\n")
+# language 2
+acad_program_list_lang2 = set_language
+acad_program_list2 = driver_instance.extract_academic_programs(
+	driver,
+	academic_program_URL
+)
+
+# sanity check
+if len(acad_program_list1) != len(acad_program_list2):
+	raise Exception("Mismatching length of lists containing the study programs (ger != en)")
+
+# extract courses for the study programs (depending on semester)
+for process_acad_prgm in acad_program_list1:
+	print (process_acad_prgm + " | " + acad_program_list_lang1, end = "\n")
+
+for process_acad_prgm in acad_program_list2:
+	print (process_acad_prgm + " | " + acad_program_list_lang2, end = "\n")
+
+
+
+
 
 
 

@@ -211,8 +211,25 @@ class crawler:
 		Example of the variable 'process_info':
 		https://tiss.tuwien.ac.at/curriculum/public/curriculum.xhtml?key=37047|Architektur|Bachelorstudium Architektur
 
-		For this curriculum, all courses will be extracted depending on the semester and
-		year. Finally, this data is returned by the function.
+		For this curriculum, all available year (2000W, 2000S, etc.) in the options are
+		selected sequentially. For each year, all courses are extracted and sorted corresponding
+		to their semester. The extracted data is returnd via the dict return_collected_courses_list:
+
+		This dict (example below) consists of indices defined as the years and the content
+		is another dict with indices being the semesters and the data a list of the courses:
+
+		return_collected_courses_list
+		{
+			'2022S': {'1. Semester': [...], '2. Semester': [...], '3. Semester': [...], ...},
+			'2022W': {'1. Semester': [...], '2. Semester': [...], '3. Semester': [...], ...},
+			.
+			.
+			.
+			'2023S': {'1. Semester': [...], '2. Semester': [...], '3. Semester': [...], ...}
+		}
+
+		[...] is a list containing all courses for the corresponding semester. See description
+		of the variable 'collected_courses' below.
 		"""
 		process_raw_data = process_info.split("|")
 		process_url = process_raw_data[0]
@@ -260,6 +277,36 @@ class crawler:
 		print(str(semester_list))
 		print("====")
 
+		# return data (dict containing lists -> index is semester and in the list
+		# are the courses for the index (= semester). This dict may look like
+		"""
+		collected_courses
+		{
+			'1. Semester': ['253G61', '253G61', ..., '251866'],
+			'2. Semester': ['264220', ..., '251867', '259601', '259604', '259606'],
+			'3. Semester': ['264218', ..., '251868'],
+			'4. Semester': ['260657'],
+			'5. Semester': ['253G68', ..., '259597'],
+			'6. Semester': ['253G70', ..., '253J19']
+		}
+		"""
+		collected_courses = {}
+
+		# dict with index being the semester (2022W, 2022S, etc.) and the data
+		# the courses depending on semester (i.e., the dict 'collected_courses'):
+		"""
+		return_collected_courses_list
+		{
+			'2022S': {'1. Semester': [...], '2. Semester': [...], '3. Semester': [...], ...},
+			'2022W': {'1. Semester': [...], '2. Semester': [...], '3. Semester': [...], ...},
+			.
+			.
+			.
+			'2023S': {'1. Semester': [...], '2. Semester': [...], '3. Semester': [...], ...}
+		}
+		"""
+		return_collected_courses_list = {}
+
 		 # loop through all found options
 		for select_semester in range(len(semester_list)):
 			# re-fetch the selector (to avoid "loose-DOM-element errors")
@@ -279,10 +326,93 @@ class crawler:
 			print("course_number|" + str(course_number) + "|")
 
 			# write source of page into a file on disk
-			f = open(process_acad_prgm_name + "|" + process_acad_subprgm_name + "|" + selected_semester + ".txt", "w")
+			write_folder = root_dir + logging_folder + study_prgms_folder + process_acad_prgm_name + "/"
+
+			# check, if the folder exists (if not -> create it)
+			if not os.path.isdir(write_folder):
+				os.mkdir(write_folder)
+
+			f = open(write_folder + process_acad_prgm_name + "|" + process_acad_subprgm_name + "|" + selected_semester + ".txt", "w")
 			f.write(raw_page_source)
 			f.close()
 
+			# extract the courses depending on the semester. Each semester is
+			# marked using a <h2>...</h2> (with the first h2 being skipped over).
+
+			# semester dividers (used to slice the string)
+			semester_divider_start = "<h2>"
+			semester_divider_end = "</h2>"
+
+			# skip first <h2> (does not denote a semester)
+			semester_position_end = raw_page_source.find(semester_divider_end)
+			raw_page_source = raw_page_source[semester_position_end + len(semester_divider_end):]
+
+			# process the page source (slices between <h2>)
+			while raw_page_source.find(semester_divider_start) != -1:
+				sem_start_div = raw_page_source.find(semester_divider_start)
+				sem_end_div = raw_page_source.find(semester_divider_end)
+
+				process_semester = raw_page_source[sem_start_div + len(semester_divider_start):sem_end_div]
+				print("PROCESS SEM: " + process_semester + "\n")
+
+				# create list for the semester in the dict 'collected_courses'
+				if process_semester not in collected_courses:
+					collected_courses[process_semester] = []
+
+				raw_page_source = raw_page_source[sem_end_div + len(semester_divider_end):]
+
+				sem_start_div = raw_page_source.find(semester_divider_start)
+
+				extract_urls_source = raw_page_source[:sem_start_div]
+
+				#print("EXTRACT TEXT: " + extract_urls_source)
+
+				# extract course numbers for this semester. These come in the form of links, e.g.,
+				# https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=251169&semester=2022S.
+				extract_course_div = "courseNr="
+				i = 0
+				while extract_urls_source.find(extract_course_div) != -1:
+					course_pos1 = extract_urls_source.find(extract_course_div)
+					extract_urls_source = extract_urls_source[course_pos1 + len(extract_course_div):]
+					found_course_number = extract_urls_source[:extract_urls_source.find("&")]
+					print("found course: " + found_course_number)
+
+					# append the course to the list in the dict (with the index being the semester)
+					collected_courses[process_semester].append(found_course_number)
+					i += 1
+				print("i: " + str(i) + "\n\n")
+
+			print("\n\n\n")
+			print(collected_courses)
+			print("\n\n\n")
+			collected_courses_keys = list( collected_courses.keys() )
+			print("KEYS: ")
+			print(collected_courses_keys)
+			print("\n\n\n")
+
+			for _ in collected_courses_keys:
+				print( len ( collected_courses[_] ) )
+
+			# remove duplicates from the lists (in the dict)
+			for _ in collected_courses_keys:
+				collected_courses[_] = list(dict.fromkeys(collected_courses[_]))
+
+			print("\n")
+
+			for _ in collected_courses_keys:
+				print( len ( collected_courses[_] ) )
+
+			# add the extracted courses to the collected-div
+			return_collected_courses_list[selected_semester] = collected_courses
+
+			# clear the dict
+			collected_courses = {}
+
+			#time.sleep(20000)
+		print("\n\n\n")
+		print(return_collected_courses_list)
+
+		return return_collected_courses_list
 
 	def check_course_exists(self, driver, page):
 		"""Check, whether a link to a course exists.
