@@ -322,8 +322,8 @@ class crawler:
 
 			# extract (academic program) course number, e.g., 033261, 033241
 			find_pos1 = raw_page_source.find(process_acad_subprgm_name)
-			course_number = raw_page_source[(find_pos1 - 8):(find_pos1 -1)]
-			print("course_number|" + str(course_number) + "|")
+			program_code = raw_page_source[(find_pos1 - 8):(find_pos1 -1)]
+			print("code|" + str(program_code) + "|")
 
 			# write source of page into a file on disk
 			write_folder = root_dir + logging_folder + study_prgms_folder + process_acad_prgm_name + "/"
@@ -410,7 +410,9 @@ class crawler:
 
 			#time.sleep(20000)
 		print("\n\n\n")
-		print(return_collected_courses_list)
+		#print(return_collected_courses_list)
+
+		return_collected_courses_list["program_code"] = program_code
 
 		return return_collected_courses_list
 
