@@ -248,7 +248,7 @@ class crawler:
 		set_language = self.get_language(driver)
 		switch_lang_search_str = "Show by semester" if set_language == "en" else "Semesteransicht"
 
-		print("SET LANG: " + set_language + "| switch_lang_search_str: " + switch_lang_search_str)
+		#print("SET LANG: " + set_language + "| switch_lang_search_str: " + switch_lang_search_str)
 
 		# switch to semester view
 		driver.find_element("link text", switch_lang_search_str).click()
@@ -320,9 +320,14 @@ class crawler:
 
 			raw_page_source = driver.page_source
 
-			# extract (academic program) course number, e.g., 033261, 033241
-			find_pos1 = raw_page_source.find(process_acad_subprgm_name)
-			program_code = raw_page_source[(find_pos1 - 8):(find_pos1 -1)]
+			# extract (academic program) course number, e.g., 033261, 033241 from the title.
+			# This information extraction is not (set) language dependent.
+			search_pos_prgm_code = "<title>Curriculum "
+			find_pos1 = raw_page_source.find(search_pos_prgm_code)
+			program_code = raw_page_source[
+				find_pos1 + len(search_pos_prgm_code):
+				(find_pos1 + len(search_pos_prgm_code) + 7)
+			]
 			print("code|" + str(program_code) + "|")
 
 			# write source of page into a file on disk
@@ -332,7 +337,7 @@ class crawler:
 			if not os.path.isdir(write_folder):
 				os.mkdir(write_folder)
 
-			f = open(write_folder + process_acad_prgm_name + "|" + process_acad_subprgm_name + "|" + selected_semester + ".txt", "w")
+			f = open(write_folder + process_acad_prgm_name + "|" + process_acad_subprgm_name.replace("/", "") + "|" + selected_semester + ".txt", "w")
 			f.write(raw_page_source)
 			f.close()
 
@@ -380,27 +385,35 @@ class crawler:
 					# append the course to the list in the dict (with the index being the semester)
 					collected_courses[process_semester].append(found_course_number)
 					i += 1
-				print("i: " + str(i) + "\n\n")
+				#print("i: " + str(i) + "\n\n")
 
+			"""
 			print("\n\n\n")
 			print(collected_courses)
 			print("\n\n\n")
+			"""
+
 			collected_courses_keys = list( collected_courses.keys() )
+
+			"""
 			print("KEYS: ")
 			print(collected_courses_keys)
 			print("\n\n\n")
 
 			for _ in collected_courses_keys:
 				print( len ( collected_courses[_] ) )
+			"""
 
 			# remove duplicates from the lists (in the dict)
 			for _ in collected_courses_keys:
 				collected_courses[_] = list(dict.fromkeys(collected_courses[_]))
 
+			"""
 			print("\n")
 
 			for _ in collected_courses_keys:
 				print( len ( collected_courses[_] ) )
+			"""
 
 			# add the extracted courses to the collected-div
 			return_collected_courses_list[selected_semester] = collected_courses
@@ -409,7 +422,7 @@ class crawler:
 			collected_courses = {}
 
 			#time.sleep(20000)
-		print("\n\n\n")
+		#print("\n\n\n")
 		#print(return_collected_courses_list)
 
 		return_collected_courses_list["program_code"] = program_code
