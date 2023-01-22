@@ -236,9 +236,19 @@ class crawler:
 		process_acad_prgm_name = process_raw_data[1]
 		process_acad_subprgm_name = process_raw_data[2]
 
+		# "url key" of the program (used to generate the URL to access the program)
+		program_url_key = process_url[process_url.find("key=") + len("key="):]
+
+		print("program_url_key: " + program_url_key)
 		print("process_url: " + process_url)
 		print("process_acad_prgm_name: " + process_acad_prgm_name)
 		print("process_acad_subprgm_name: " + process_acad_subprgm_name)
+
+
+		"""
+		# manually selecting "SEMESTER VIEW" and fetching the semester OPTIONS
+		# is not necessary anymore since crawling is done solely by using URL
+		# $_GET parameters, which deals with all of that.
 
 		self.fetch_page(driver, process_url)
 
@@ -276,6 +286,8 @@ class crawler:
 		print("option list:")
 		print(str(semester_list))
 		print("====")
+		"""
+
 
 		# return data (dict containing lists -> index is semester and in the list
 		# are the courses for the index (= semester). This dict may look like
@@ -307,7 +319,165 @@ class crawler:
 		"""
 		return_collected_courses_list = {}
 
-		 # loop through all found options
+
+		# process all semesters for this academic program (defined by the "key" which is the $_GET url-parameter)
+		# The called URL looks like:
+		#https://tiss.tuwien.ac.at/curriculum/public/curriculumSemester.xhtml?semesterCode=2011W&le=false&key=37273
+		#
+		# with key being 'program_url_key', le set to 'false' and semesterCode is the semester:
+		# semesterCode = chosen semester (2011W, 2011S, etc.)
+		# le = quereinsteiger (late enrollers)
+		base_url = "https://tiss.tuwien.ac.at/curriculum/public/curriculumSemester.xhtml?le=false&key=" + program_url_key
+
+		# go through all semesters, e.g.:
+		# START -> 2023S, 2022W, 2022S, 2021W, 2021S, 2020W, 2020S, ... <- END
+		# From the starting semester (2023S in the example above), continue until
+		# there is no available page  ("Page not found" reached)
+		select_process_semester = "2023S"
+
+		# process (decreasing) semesters until the page (course) does not exist
+		while True:
+
+			print ("processing semester: " + select_process_semester)
+
+			# create URL to be processed
+			fetch_url_semester = base_url + "&semesterCode=" + select_process_semester
+
+			# determine if url (study program exists) -> True: process; False -> break while loop
+			page_exists = self.check_course_exists(driver, fetch_url_semester)
+
+			# process course only if it exists
+			if page_exists == False:
+				break
+
+			# no break -> continue with data extraction
+			raw_page_source = driver.page_source
+
+			# extract (academic program) course number, e.g., 033261, 033241 from the title.
+			# This information extraction is not (set) language dependent.
+			search_pos_prgm_code = "<title>Curriculum "
+			find_pos1 = raw_page_source.find(search_pos_prgm_code)
+			program_code = raw_page_source[
+				find_pos1 + len(search_pos_prgm_code):
+				(find_pos1 + len(search_pos_prgm_code) + 7)
+			]
+			print("code|" + str(program_code) + "|")
+
+			# write source of page into a file on disk
+			write_folder = root_dir + logging_folder + study_prgms_folder + process_acad_prgm_name + "/"
+
+			# check, if the folder exists (if not -> create it)
+			if not os.path.isdir(write_folder):
+				os.mkdir(write_folder)
+
+			f = open(write_folder + process_acad_prgm_name + "|" + process_acad_subprgm_name.replace("/", "") + "|" + select_process_semester + ".txt", "w")
+			f.write(raw_page_source)
+			f.close()
+
+			# extract the courses depending on the semester. Each semester is
+			# marked using a <h2>...</h2> (with the first h2 being skipped over).
+
+			# semester dividers (used to slice the string)
+			semester_divider_start = "<h2>"
+			semester_divider_end = "</h2>"
+
+			# skip first <h2> (does not denote a semester)
+			semester_position_end = raw_page_source.find(semester_divider_end)
+			raw_page_source = raw_page_source[semester_position_end + len(semester_divider_end):]
+
+			# process the page source (slices between <h2>)
+			while raw_page_source.find(semester_divider_start) != -1:
+				sem_start_div = raw_page_source.find(semester_divider_start)
+				sem_end_div = raw_page_source.find(semester_divider_end)
+
+				process_semester = raw_page_source[sem_start_div + len(semester_divider_start):sem_end_div]
+				#print("PROCESS SEM: " + process_semester + "\n")
+
+				# create list for the semester in the dict 'collected_courses'
+				if process_semester not in collected_courses:
+					collected_courses[process_semester] = []
+
+				raw_page_source = raw_page_source[sem_end_div + len(semester_divider_end):]
+
+				sem_start_div = raw_page_source.find(semester_divider_start)
+
+				extract_urls_source = raw_page_source[:sem_start_div]
+
+				#print("EXTRACT TEXT: " + extract_urls_source)
+
+				# extract course numbers for this semester. These come in the form of links, e.g.,
+				# https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=251169&semester=2022S.
+				extract_course_div = "courseNr="
+				i = 0
+				while extract_urls_source.find(extract_course_div) != -1:
+					course_pos1 = extract_urls_source.find(extract_course_div)
+					extract_urls_source = extract_urls_source[course_pos1 + len(extract_course_div):]
+					found_course_number = extract_urls_source[:extract_urls_source.find("&")]
+					#print("found course: " + found_course_number)
+
+					# append the course to the list in the dict (with the index being the semester)
+					collected_courses[process_semester].append(found_course_number)
+					i += 1
+				#print("i: " + str(i) + "\n\n")
+
+			"""
+			print("\n\n\n")
+			print(collected_courses)
+			print("\n\n\n")
+			"""
+
+			collected_courses_keys = list( collected_courses.keys() )
+
+			"""
+			print("KEYS: ")
+			print(collected_courses_keys)
+			print("\n\n\n")
+
+			for _ in collected_courses_keys:
+				print( len ( collected_courses[_] ) )
+			"""
+
+			# remove duplicates from the lists (in the dict)
+			for _ in collected_courses_keys:
+				collected_courses[_] = list(dict.fromkeys(collected_courses[_]))
+
+			"""
+			print("\n")
+
+			for _ in collected_courses_keys:
+				print( len ( collected_courses[_] ) )
+			"""
+
+			# add the extracted courses to the collected-div
+			return_collected_courses_list[select_process_semester] = collected_courses
+
+			# clear the dict
+			collected_courses = {}
+
+			# manipulate semester -> select next semester (alternate between
+			# summer- and wintersemesters)
+			if select_process_semester[-1] == "S":
+				select_process_semester = str(int(select_process_semester[:-1]) - 1) + "W"
+			elif select_process_semester[-1] == "W":
+				select_process_semester = select_process_semester[:-1] + "S"
+
+			"""
+			# arbitrary stop when reaching this semester
+			if int(select_process_semester[:-1]) < 1990:
+				break
+			"""
+
+			#print("manual break")
+			#break
+
+
+
+
+
+
+
+		"""
+
 		for select_semester in range(len(semester_list)):
 			# re-fetch the selector (to avoid "loose-DOM-element errors")
 			selector = Select(driver.find_element("name", selectorId))
@@ -387,39 +557,28 @@ class crawler:
 					i += 1
 				#print("i: " + str(i) + "\n\n")
 
-			"""
-			print("\n\n\n")
-			print(collected_courses)
-			print("\n\n\n")
-			"""
+			#print("\n\n\n")
+			#print(collected_courses)
+			#print("\n\n\n")
 
 			collected_courses_keys = list( collected_courses.keys() )
-
-			"""
-			print("KEYS: ")
-			print(collected_courses_keys)
-			print("\n\n\n")
-
-			for _ in collected_courses_keys:
-				print( len ( collected_courses[_] ) )
-			"""
 
 			# remove duplicates from the lists (in the dict)
 			for _ in collected_courses_keys:
 				collected_courses[_] = list(dict.fromkeys(collected_courses[_]))
-
-			"""
-			print("\n")
-
-			for _ in collected_courses_keys:
-				print( len ( collected_courses[_] ) )
-			"""
 
 			# add the extracted courses to the collected-div
 			return_collected_courses_list[selected_semester] = collected_courses
 
 			# clear the dict
 			collected_courses = {}
+
+		"""
+
+
+
+
+
 
 			#time.sleep(20000)
 		#print("\n\n\n")
@@ -468,11 +627,26 @@ class crawler:
 		not_found_en1 = driver.page_source.find('Bad request')
 		not_found_en2 = driver.page_source.find('The requested resource could not be found')
 
+		# study program:
+		# The requested page could not be found
+
+		# courses:
+		# The requested resource could not be found
+
+		# -> check also for title "Error page" (which could cover both cases (study program and courses)
+		not_found__error_page = driver.page_source.find('Error page')
+
 		course_exist = True
 
 		#print ( str(not_found_ger1) + "|" + str(not_found_ger2) + "|" + str(not_found_en1) + "|" + str(not_found_en2) )
 
-		if not_found_ger1 != -1 or not_found_ger2 != -1 or not_found_en1 != -1 or not_found_en2 != -1:
+		if (
+				not_found_ger1 != -1 or
+				not_found_ger2 != -1 or
+				not_found_en1 != -1 or
+				not_found_en2 != -1 or
+				not_found__error_page != -1
+			):
 			course_exist = False
 
 		return course_exist

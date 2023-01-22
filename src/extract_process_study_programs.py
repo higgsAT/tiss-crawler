@@ -53,7 +53,7 @@ if len(acad_program_list1) != len(acad_program_list2):
 	raise Exception("Mismatching length of lists containing the study programs (ger != en)")
 
 # skip to a certain point
-_start = 0
+_start = 104
 
 # extract courses for the study programs (depending on semester)
 # set_language = "de" or "en"
@@ -66,7 +66,14 @@ for _ in range( _start, len( acad_program_list1 ) ):
 
 	## unpack the returned information
 	# study code (123 456, 555 666, etc.)
-	insert_program_code = '"' + return_collected_courses_list['program_code'] + '"'
+	process_study_code = return_collected_courses_list['program_code']
+
+	# some academic programs don't have program codes -> if not valid format set to empty string
+	if not process_study_code[:3].isnumeric() or not process_study_code[4:].isnumeric() or process_study_code[3] != " ":
+		print("no study code: " + process_study_code)
+		process_study_code = ""
+
+	insert_program_code = '"' + process_study_code + '"'
 	print("insert_program_code: " + insert_program_code)
 
 	#print("RETURNRETURN:")
@@ -94,32 +101,48 @@ for _ in range( _start, len( acad_program_list1 ) ):
 		insert_acad_prgm_en = '"' + acad_program_list1[_].split("|")[1] + '"'
 		insert_subprgm_title_en = '"' + acad_program_list1[_].split("|")[2] + '"'
 
-	# blank (will be set in the DB directly later on)
-	insert_id_courses = "0";
-
 	# format course numbers / additional info into sql-inserts and
 	# write this into a file.
 	for _ in return_coll_courses_keys:
+		# program code is also in the dict -> no semester info in this key => ignore
 		if _ != "program_code":
 			process_entry = return_collected_courses_list[_]
 			#print(_ + " | " + academ_program_name_de + ":")
 
 			process_entry_keys = list ( process_entry.keys() )
+
+			# count total number of courses for this semester. If this number is
+			# zero, don't proceed any further (no entry into DB)
+			amt_courses = 0
 			for __ in process_entry_keys:
-				#print(__)
-				#print(process_entry[__])
 				for ___ in process_entry[__]:
+					amt_courses = amt_courses + 1
+
+			print("amt_courses: " + str(amt_courses))
+
+			if amt_courses > 0:
+				for __ in process_entry_keys:
+					#print(__)
+					print(process_entry[__])
+
+					# formatt courses, join them
+					join_formatted_courses = ""
+					for ___ in process_entry[__]:
+						if join_formatted_courses == "":
+							join_formatted_courses = ___[:3] + "." + ___[3:]
+						else:
+							join_formatted_courses = join_formatted_courses + "|" + ___[:3] + "." + ___[3:]
+
 					# generate DB insert variables
-					insert_unique_id = '"' + ___ + __ + _ + insert_subprgm_title_de[1:-1] + insert_acad_prgm_de[1:-1] + '"'
-					insert_course_number = '"' + ___[:3] + "." + ___[3:] + '"'
+					insert_unique_id = '"' +  __ + _ + insert_subprgm_title_de[1:-1] + insert_acad_prgm_de[1:-1] + '"'
+					insert_course_numbers = '"' + join_formatted_courses + '"'
 					insert_semester = '"' + _ + '"'
 					insert_subsemester = '"' + __ + '"'
 
 					insert_statement = (
 					  "(" +
 							insert_unique_id + ", " +
-							insert_id_courses + ", " +
-							insert_course_number + ", " +
+							insert_course_numbers + ", " +
 							insert_semester + ", " +
 							insert_subsemester + ", " +
 							insert_subprgm_title_de + ", " +
@@ -129,14 +152,17 @@ for _ in range( _start, len( acad_program_list1 ) ):
 							insert_program_code +
 						"),"
 						)
-					#print(insert_statement)
+					print(insert_statement)
 					f_study_programs_insert.write(insert_statement + "\n")
-					#("uniqueID2", 2, "123.456", "2022W", "subDE", "subEN", "aPOde", "aPOen", "456 789"),
-				#print("\n")
+						#("uniqueID2", 2, "123.456", "2022W", "subDE", "subEN", "aPOde", "aPOen", "456 789"),
+					#print("\n")
 			#print(process_entry_keys)
 
 			#print(process_entry)
 			#print("\n\n")
+
+	# manual break
+	#break
 
 f_study_programs_insert.close()
 
