@@ -70,6 +70,10 @@ and the files are downloaded directly into the 'downloads' folder
 total_downloaded_files = 0
 total_page_crawls = 0
 
+# False -> each INSERT statement is directly inserted into the DB (slower)
+# True -> the insertion statements are written to a file on the disk
+writeInsertToFile = True
+
 def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_name):
 	"""Insert data into a SQL database
 	"""
@@ -90,29 +94,41 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 		course_number = str(chosen_semester_dict.get("course number"))
 		semester = str(chosen_semester_dict.get("semester"))
 
-		# search through all tables if the course is already in the DB
-		course_already_in_DB = False
-		all_sql_tables = sqlhandlerObj.fetch_all_tables(dbDatabase)
+		"""
+		# This should be redundant since existance in the DB is checked beforehand (see -> course_already_in_DB)
 
-		for query_table in all_sql_tables:
-			sql_where = " WHERE page_fetch_lang = %s AND `course number` = %s AND semester = %s"
-			sql_select = "SELECT * FROM "
-			sql_values = (page_fetch_lang, course_number, semester)
-			amount_of_datasets_in_DB = sqlhandlerObj.select_query(
-				dbDatabase,
-				query_table,
-				sql_values,
-				sql_where,
-				sql_select
-			)
 
-			if len(amount_of_datasets_in_DB) > 0:
-				pylogs.write_to_logfile(f_runtime_log,
-					"Entry '" + page_fetch_lang + "|" + course_number +
-					"|" + semester + "' is already in the DB"
+
+
+		# when writing to a files directly, skip the query if the course is already in the DB
+		if writeInsertToFile == False:
+			# search through all tables if the course is already in the DB
+			course_already_in_DB = False
+			all_sql_tables = sqlhandlerObj.fetch_all_tables(dbDatabase)
+
+			for query_table in all_sql_tables:
+				sql_where = " WHERE page_fetch_lang = %s AND `course number` = %s AND semester = %s"
+				sql_select = "SELECT * FROM "
+				sql_values = (page_fetch_lang, course_number, semester)
+				amount_of_datasets_in_DB = sqlhandlerObj.select_query(
+					dbDatabase,
+					query_table,
+					sql_values,
+					sql_where,
+					sql_select
 				)
-				course_already_in_DB = True
-				break
+
+				if len(amount_of_datasets_in_DB) > 0:
+					pylogs.write_to_logfile(f_runtime_log,
+						"Entry '" + page_fetch_lang + "|" + course_number +
+						"|" + semester + "' is already in the DB"
+					)
+					course_already_in_DB = True
+					break
+		else:
+			course_already_in_DB = False
+		"""
+		course_already_in_DB = False
 
 		if course_already_in_DB == False:
 			# perform the insertion into the DB
@@ -125,9 +141,11 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 				`Vorausgehende Lehrveranstaltungen`, `Vortragende Personen`, \
 				Sprache, Institut, Gruppentermine, Prüfungen, Gruppen_Anmeldung, \
 				`LVA Termine`, Curricula, `Ziele der Lehrveranstaltung`, Lernergebnisse) "
-				"VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, \
-				%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 			)
+
+			# additional string when inserting directly into the sql DB
+			connectorAddStr = "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, \
+				%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
 			try:
 				if chosen_semester_dict["Vortragende Personen"] != "":
@@ -173,7 +191,13 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 				lecturers, language, institute, group_dates, exams, group_registration,
 				course_dates, curricula, aim_of_the_course, learning_outcomes)
 
-			sqlhandlerObj.insert_into_table(dbDatabase, insertStatement, insertData, 1)
+			# executing each SQL insertion statement sequentially takes a significant amount
+			# of time. Either do this or write the statements into a file (and process them
+			# in another way, e.g., on the server)
+			if writeInsertToFile == False:
+				sqlhandlerObj.insert_into_table(dbDatabase, insertStatement + connectorAddStr, insertData, 1)
+			else:
+				pylogs.write_to_logfile(f_insertionStatements, insertStatement + " VALUES " + str(insertData) + ";\n", True, False)
 
 def process_courses(
 	acad_course_list,
@@ -330,7 +354,14 @@ def process_courses(
 					)
 					break
 
-		if course_already_in_DB == False:
+		# TODO:	implement this check in crawl.py instead of making another
+		#			call to check_course_exists() here
+		#process_course_number = temp_course_number[:3] + "." + temp_course_number [3:]
+
+		check_url = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=" + temp_course_number
+		course_exists = driver_instance.check_course_exists(driver, check_url)
+
+		if course_already_in_DB == False and course_exists:
 			# process the course
 			return_info_dict, \
 			ret_dwnlds, \
@@ -451,7 +482,7 @@ if os.path.isfile(logging_folder + logging_queued_courses):
 			process_acad_prgm_URL = line.rstrip().split('|')[0]
 			process_acad_prgm_name = line.rstrip().split('|')[1]
 			acad_course_list.append(process_acad_prgm_URL)
-			pylogs.write_to_logfile(f_runtime_log_global, line.rstrip())
+			pylogs.write_to_logfile(f_runtime_log_global, line.rstrip(), False)
 else:
 	# no file containing academic programs was found -> "start at zero"
 	pylogs.write_to_logfile(f_runtime_log_global, 'file "' + logging_folder + logging_queued_courses + '" does not exist')
@@ -462,10 +493,12 @@ pylogs.write_to_logfile(f_runtime_log_global, str(len(acad_course_list)) + " que
 # first. This case should never catch since an academic program gets only
 # removed if the course list is empty.
 if len(acad_course_list) > 0 and len(acad_program_list) == 0:
+	print("academic list empty but queued courses not!")
+	# override the academic program (set manually)
+	acad_program_list = [" |NoCurricula|NoCurricula"]
+	#acad_program_list.append(" |NoCurricula|NoCurricula");
 	#process_courses(acad_course_list, process_acad_prgm_name, f_runtime_log, f_failed_downloads)
-	#TODO: set logging folders
-	print("academic list empty but queued courses not!");
-	sys.exit()
+	#sys.exit()
 
 # continue/start crawling
 for process_acad_prgm in acad_program_list[:]:
@@ -512,6 +545,8 @@ for process_acad_prgm in acad_program_list[:]:
 		"/unkown_field_stats_" + pylogs.get_time())
 	f_failed_downloads = pylogs.open_logfile(acad_program_path_logs +
 		"/failed_download_stats_" + pylogs.get_time())
+	f_insertionStatements = pylogs.open_logfile(acad_program_path_logs +
+		"/insertion_statements" + pylogs.get_time())
 
 	pylogs.write_to_logfile(f_runtime_log_global, "f_runtime_log: " +
 		os.path.basename(f_runtime_log.name))
@@ -523,20 +558,23 @@ for process_acad_prgm in acad_program_list[:]:
 	pylogs.write_to_logfile(f_runtime_log, "processing: " + process_acad_prgm_URL +
 		" | " + process_acad_prgm_name + " | " + process_acad_prgm_studycode)
 
-	# Take the URL of an academic program and extract all corresponding courses
-	acad_course_list_fetch = driver_instance.extract_courses(driver, process_acad_prgm_URL, f_runtime_log)
-	pylogs.write_to_logfile(f_runtime_log, '#queued academic courses (' +
-		str(len(acad_course_list_fetch)) + "):")
+	# process_acad_prgm_URL == " " for queued courses but no queued academic programs
+	if process_acad_prgm_URL != " ":
+		# Take the URL of an academic program and extract all corresponding courses
+		acad_course_list_fetch = driver_instance.extract_courses(driver, process_acad_prgm_URL, f_runtime_log)
+		pylogs.write_to_logfile(f_runtime_log, '#queued academic courses (' +
+			str(len(acad_course_list_fetch)) + "):")
 
-	# append the fetched data to the processing list, remove duplicates
-	acad_course_list.extend(acad_course_list_fetch)
+		# append the fetched data to the processing list, remove duplicates
+		acad_course_list.extend(acad_course_list_fetch)
+
 	acad_course_list = list( dict.fromkeys(acad_course_list) )
 
 	# write fetched courses into the logfile.
 	f = open(logging_folder + logging_queued_courses, "w")
 	for i in range(len(acad_course_list)):
 		f.write(acad_course_list[i] + "|" + process_acad_prgm_name + "\n")
-		pylogs.write_to_logfile(f_runtime_log, acad_course_list[i] + "|" + process_acad_prgm_name)
+		pylogs.write_to_logfile(f_runtime_log, acad_course_list[i] + "|" + process_acad_prgm_name, False)
 	f.close()
 
 	# extract course information for the academic course´

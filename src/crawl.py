@@ -623,9 +623,14 @@ class crawler:
 		# determine, whether the course exists or not
 		not_found_ger1 = driver.page_source.find('Ressource nicht gefunden')
 		not_found_ger2 = driver.page_source.find('Die angeforderte Ressource wurde nicht gefunden')
+		# Die LVA ist im Semester 2004S noch nicht veröffentlicht.
+		not_found_ger3 = driver.page_source.find('noch nicht veröffentlicht')
+
 
 		not_found_en1 = driver.page_source.find('Bad request')
 		not_found_en2 = driver.page_source.find('The requested resource could not be found')
+		# The Course is not public in semester 2004S.
+		not_found_en3 = driver.page_source.find('The Course is not public')
 
 		# study program:
 		# The requested page could not be found
@@ -643,8 +648,10 @@ class crawler:
 		if (
 				not_found_ger1 != -1 or
 				not_found_ger2 != -1 or
+				not_found_ger3 != -1 or
 				not_found_en1 != -1 or
 				not_found_en2 != -1 or
+				not_found_en3 != -1 or
 				not_found__error_page != -1
 			):
 			course_exist = False
@@ -665,7 +672,25 @@ class crawler:
 			time.sleep(self.crawl_delay - t_diff)
 
 		self.last_crawltime = time.time()
-		driver.get(page)
+
+		# try to fetch the page (retry in case an error occurs)
+		sleep_time = 30
+		amt_retries = 5
+		for x in range(0, amt_retries):
+			try:
+				driver.get(page)
+				resulting_error = None
+			except Exception as e:
+				resulting_error = str(e)
+				print ( "error" + str(resulting_error) )
+
+			if resulting_error:
+				print ( "sleeptime set to: " + str(sleep_time) )
+				time.sleep(sleep_time)
+				sleep_time *= 2
+			else:
+				break
+
 
 	def fetch_page(self, driver, page):
 		"""Fetches a single website and verify its crawl.

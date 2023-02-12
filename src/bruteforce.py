@@ -123,7 +123,7 @@ processed_courses_list = fetch_processed_courses()
 crawl_delay = 5
 
 # check course numbers (brute force) in the range between these two variables
-check_course_start = 191158
+check_course_start = 402322
 check_course_end = 1000000
 
 driver_instance = crawl.crawler(False, 800, 600, crawl_delay)

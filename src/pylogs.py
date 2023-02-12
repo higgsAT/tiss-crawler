@@ -30,13 +30,19 @@ def open_logfile(logfile_file_path):
 	f = open(logfile_file_path + ".log", "a")
 	return f
 
-def write_to_logfile(file_pointer, log_message):
+def write_to_logfile(file_pointer, log_message, printMsg = True, printPrefix = True):
 		'''writes (append) a meassge into a given logfile'''
 
 		time_now = get_time()
 
-		print(log_message)
-		file_pointer.write(time_now + " >> " + log_message + "\n")
+		if printMsg == True:
+			print(log_message)
+
+		if (printPrefix == True):
+			file_pointer.write(time_now + " >> " + log_message + "\n")
+		else:
+			file_pointer.write(log_message + "\n")
+
 		file_pointer.flush()
 		os.fsync(file_pointer)
 

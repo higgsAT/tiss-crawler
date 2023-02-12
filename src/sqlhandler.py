@@ -76,7 +76,25 @@ class SqlHandler:
 			password = self.sql_login_password,
 			host = self.sql_login_host,
 			database = select_database)
-		cursor = connection.cursor(dictionary = True)
+		#cursor = connection.cursor(dictionary = True)
+
+		sleep_time = 30
+		amt_retries = 5
+		for x in range(0, amt_retries):
+			try:
+				cursor = connection.cursor(dictionary = True)
+				resulting_error = None
+			except Exception as e:
+				resulting_error = str(e)
+				print ( "error" + str(resulting_error) )
+
+			if resulting_error:
+				print ( "sleeptime set to: " + str(sleep_time) )
+				time.sleep(sleep_time)
+				sleep_time *= 2
+			else:
+				break
+
 
 		cursor.execute("SHOW TABLES")
 		return_all_tables = cursor.fetchall()
@@ -150,7 +168,24 @@ class SqlHandler:
 			password = self.sql_login_password,
 			host = self.sql_login_host,
 			database = select_database)
-		cursor = connection.cursor()
+		#cursor = connection.cursor()
+
+		sleep_time = 30
+		amt_retries = 5
+		for x in range(0, amt_retries):
+			try:
+				cursor = connection.cursor()
+				resulting_error = None
+			except Exception as e:
+				resulting_error = str(e)
+				print ( "error" + str(resulting_error) )
+
+			if resulting_error:
+				print ( "sleeptime set to: " + str(sleep_time) )
+				time.sleep(sleep_time)
+				sleep_time *= 2
+			else:
+				break
 
 		# sanity check on the existance of the table
 		all_tables = self.fetch_all_tables(select_database, 0)
@@ -164,7 +199,24 @@ class SqlHandler:
 		# table found -> proceed with the query
 		if table_exists == True:
 			sql_query = sql_select + "`" + select_table + "`" + sql_where
-			cursor.execute(sql_query, sql_values)
+
+			sleep_time = 30
+			amt_retries = 5
+			for x in range(0, amt_retries):
+				try:
+					cursor.execute(sql_query, sql_values)
+					resulting_error = None
+				except Exception as e:
+					resulting_error = str(e)
+					print ( "error" + str(resulting_error) )
+
+				if resulting_error:
+					print ( "sleeptime set to: " + str(sleep_time) )
+					time.sleep(sleep_time)
+					sleep_time *= 2
+				else:
+					break
+
 			result = cursor.fetchall()
 		else:
 			print("select_table_content: table '", select_table, "' is not in the DB")
