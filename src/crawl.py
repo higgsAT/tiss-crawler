@@ -167,7 +167,7 @@ class crawler:
 
 		return language
 
-	def switch_language(self, driver):
+	def switch_language(self, driver, f_logfile = ""):
 		"""Switch the language (DE/EN).
 		
 		Switches the set language from EN to DE and
@@ -186,21 +186,34 @@ class crawler:
 		language_de_find = driver.page_source.find("language_de")
 		language_de_find2 = driver.page_source.find('<a href="/?locale=de">Deutsch</a>')
 
+		# language changed successfully
+		lang_changed = False
+
 		if (set_language == "de" and language_en_find != -1):
 			driver.find_element("id", "language_en").click()
 			self.language = "en"
+			lang_changed = True
 
 		if (set_language == "de" and language_en_find2 != -1):
 			driver.find_element(By.XPATH,'//a[contains(@href,"/?locale=en")]').click()
 			self.language = "en"
+			lang_changed = True
 
 		if (set_language == "en" and language_de_find != -1):
 			driver.find_element("id", "language_de").click()
 			self.language = "de"
+			lang_changed = True
 
 		if (set_language == "en" and language_de_find2 != -1):
 			driver.find_element(By.XPATH,'//a[contains(@href,"/?locale=de")]').click()
 			self.language = "de"
+			lang_changed = True
+
+		# change of language failed -> write info into logfile
+		if lang_changed == False and f_logfile != "":
+			pylogs.write_to_logfile(f_logfile, "lang change failed (" +
+				lang_changed + "). Source: " + driver.page_source
+			)
 
 		# wait for the page to be loaded correctly (JS)
 		time.sleep(self.sleeptime_fetchpage)
@@ -1083,15 +1096,23 @@ class crawler:
 			for i in range(0, 2):
 				# always start with the same language (download folder name)
 				if i == 1:
-					self.switch_language(driver)
-				"""
-				if i == 0 and self.language != "de":
-					self.switch_language(driver)
-				else:
-					self.switch_language(driver)
-				"""
+					# sometimes language seems to not switch -> try again then
+					sleep_time = 30
+					amt_retries = 5
+					for x in range(0, amt_retries):
+						# old language
+						old_language = self.language
+						self.switch_language(driver, pylogs_filepointer)
+						new_language = self.language
+						print("old lang: " + old_language + " | new lang: " + new_language)
 
-				#print("i: " + str(i) + "  |  set language: " + self.language)
+						if old_language == new_language:
+							time.sleep(sleep_time)
+							sleep_time *= 2
+							driver.refresh()
+							time.sleep(sleep_time)
+						else:
+							break
 
 				pylogs.write_to_logfile(pylogs_filepointer, 'open URL: ' + URL +
 					' | lang: ' + self.language +
@@ -1131,18 +1152,45 @@ class crawler:
 				needle2 = "</span>"
 				pos2 = course_raw_info.find(needle2)
 				course_number = course_raw_info[pos1 + len(needle1):pos2].strip()
+
+				# sometimes fetching of the page fails which results
+				# in an JS error page (course number = "<noscri" but
+				# the program continues -> catch these cases here and
+				# reload (refetch) the page in these cases
+				sleep_time = 30
+				amt_retries = 5
+				for x in range(0, amt_retries):
+					# sanity course number check -> refresh if this fails
+					if course_number_URL != course_number.replace('.', ''):
+						warnings.warn("Error mismatching course numbers: " +
+							course_number.replace('.', '') + " and " + course_number_URL
+						)
+
+						pylogs.write_to_logfile(pylogs_filepointer, "FP1: " + course_raw_info)
+						time.sleep(sleep_time)
+						sleep_time *= 2
+						driver.refresh()
+						time.sleep(sleep_time)
+						course_raw_info = self.fetch_page(driver, URL)
+						pylogs.write_to_logfile(pylogs_filepointer, "FP2: " + course_raw_info)
+
+						# refetch the course number after failure to load page
+						pos1 = course_raw_info.find(needle1)
+						pos2 = course_raw_info.find(needle2)
+						course_number = course_raw_info[pos1 + len(needle1):pos2].strip()
+						#print("course nmbr: |" +  course_number + "|")
+						pylogs.write_to_logfile(pylogs_filepointer, "course_number: " + course_number)
+
+						# (re)set language -> missing page load = missing (set) language change ?!
+						self.language = self.get_language(driver)
+						pylogs.write_to_logfile(pylogs_filepointer, "(re)set lang: " + self.language)
+						extract_dict["page_fetch_lang"] = self.language
+					# course number valid -> continue
+					else:
+						break
+
 				#print("course nmbr: |" +  course_number + "|")
 				extract_dict["course number"] = course_number
-
-				# sanity course number check
-				if course_number_URL != course_number.replace('.', ''):
-					warnings.warn("Error mismatching course numbers: " +
-						course_number.replace('.', '') + " and " + course_number_URL
-					)
-					print("FP1: " + course_raw_info)
-					time.sleep(30)
-					course_raw_info = self.fetch_page(driver, URL)
-					print("FP2: " + course_raw_info)
 
 				course_raw_info = course_raw_info[pos2 + len(needle2):]
 				#print(course_raw_info)
@@ -1353,6 +1401,11 @@ class crawler:
 
 					if i > 100:
 						break
+
+				# write both (extracted) semesters into the logfile
+				pylogs.write_to_logfile(pylogs_filepointer, 'semester1: ' + extract_dict["semester"] +
+					' | semester2: ' + selected_semester
+				)
 
 				return_info_dict[selected_semester + self.language] = extract_dict
 
