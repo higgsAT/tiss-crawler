@@ -6,6 +6,8 @@ import sys
 
 from config import *
 
+# TODO: set language (subsemester) to english (DB!)
+
 # initiate driver (instance)
 crawl_delay = 10
 driver_instance = crawl.crawler(False, 800, 600, crawl_delay)
@@ -14,7 +16,7 @@ driver = driver_instance.init_driver()
 # log in to get all available semester options (not logged in -> max. ~ 3 semesters available)
 # while being logged in, the SELECT options reach further into the past (~ 6 semester), using
 # URL $_GET-parameters, it'S possible to even go (much) further back into time without loggin in!
-#driver_instance.tiss_login(driver)
+driver_instance.tiss_login(driver)
 
 # determine the set language of TISS
 set_language = driver_instance.get_language(driver)
@@ -53,7 +55,7 @@ if len(acad_program_list1) != len(acad_program_list2):
 	raise Exception("Mismatching length of lists containing the study programs (ger != en)")
 
 # skip to a certain point
-_start = 104
+_start = 114
 
 # extract courses for the study programs (depending on semester)
 # set_language = "de" or "en"
@@ -62,7 +64,7 @@ for _ in range( _start, len( acad_program_list1 ) ):
 	print( str(_) + " " + acad_program_list_lang2 + " processing: " + acad_program_list2[_] )
 
 	# extract information about the study program (take either language -> does not matter)
-	return_collected_courses_list = driver_instance.process_acad_prgm(driver, acad_program_list1[_])
+	return_collected_courses_list = driver_instance.process_acad_prgm(driver, acad_program_list1[_], True)
 
 	## unpack the returned information
 	# study code (123 456, 555 666, etc.)
@@ -125,7 +127,7 @@ for _ in range( _start, len( acad_program_list1 ) ):
 					#print(__)
 					print(process_entry[__])
 
-					# formatt courses, join them
+					# format courses, join them
 					join_formatted_courses = ""
 					for ___ in process_entry[__]:
 						if join_formatted_courses == "":

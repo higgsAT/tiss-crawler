@@ -218,7 +218,7 @@ class crawler:
 		# wait for the page to be loaded correctly (JS)
 		time.sleep(self.sleeptime_fetchpage)
 
-	def process_acad_prgm(self, driver, process_info):
+	def process_acad_prgm(self, driver, process_info, fetch_single_semester = False):
 		"""Takes the output from extract_academic_programs(...) and processes it.
 
 		Example of the variable 'process_info':
@@ -243,6 +243,8 @@ class crawler:
 
 		[...] is a list containing all courses for the corresponding semester. See description
 		of the variable 'collected_courses' below.
+
+		fetch_single_semester = True: fetch only a single (latest) semester
 		"""
 		process_raw_data = process_info.split("|")
 		process_url = process_raw_data[0]
@@ -346,7 +348,7 @@ class crawler:
 		# START -> 2023S, 2022W, 2022S, 2021W, 2021S, 2020W, 2020S, ... <- END
 		# From the starting semester (2023S in the example above), continue until
 		# there is no available page  ("Page not found" reached)
-		select_process_semester = "2023S"
+		select_process_semester = "2021W"
 
 		# process (decreasing) semesters until the page (course) does not exist
 		while True:
@@ -480,118 +482,9 @@ class crawler:
 				break
 			"""
 
-			#print("manual break")
-			#break
-
-
-
-
-
-
-
-		"""
-
-		for select_semester in range(len(semester_list)):
-			# re-fetch the selector (to avoid "loose-DOM-element errors")
-			selector = Select(driver.find_element("name", selectorId))
-			selected_semester = semester_list[select_semester]
-			print("selecting: " + selected_semester)
-
-			# select the desired semester
-			selector.select_by_visible_text(selected_semester)
-			time.sleep(self.sleeptime_fetchpage)
-
-			raw_page_source = driver.page_source
-
-			# extract (academic program) course number, e.g., 033261, 033241 from the title.
-			# This information extraction is not (set) language dependent.
-			search_pos_prgm_code = "<title>Curriculum "
-			find_pos1 = raw_page_source.find(search_pos_prgm_code)
-			program_code = raw_page_source[
-				find_pos1 + len(search_pos_prgm_code):
-				(find_pos1 + len(search_pos_prgm_code) + 7)
-			]
-			print("code|" + str(program_code) + "|")
-
-			# write source of page into a file on disk
-			write_folder = root_dir + logging_folder + study_prgms_folder + process_acad_prgm_name + "/"
-
-			# check, if the folder exists (if not -> create it)
-			if not os.path.isdir(write_folder):
-				os.mkdir(write_folder)
-
-			f = open(write_folder + process_acad_prgm_name + "|" + process_acad_subprgm_name.replace("/", "") + "|" + selected_semester + ".txt", "w")
-			f.write(raw_page_source)
-			f.close()
-
-			# extract the courses depending on the semester. Each semester is
-			# marked using a <h2>...</h2> (with the first h2 being skipped over).
-
-			# semester dividers (used to slice the string)
-			semester_divider_start = "<h2>"
-			semester_divider_end = "</h2>"
-
-			# skip first <h2> (does not denote a semester)
-			semester_position_end = raw_page_source.find(semester_divider_end)
-			raw_page_source = raw_page_source[semester_position_end + len(semester_divider_end):]
-
-			# process the page source (slices between <h2>)
-			while raw_page_source.find(semester_divider_start) != -1:
-				sem_start_div = raw_page_source.find(semester_divider_start)
-				sem_end_div = raw_page_source.find(semester_divider_end)
-
-				process_semester = raw_page_source[sem_start_div + len(semester_divider_start):sem_end_div]
-				print("PROCESS SEM: " + process_semester + "\n")
-
-				# create list for the semester in the dict 'collected_courses'
-				if process_semester not in collected_courses:
-					collected_courses[process_semester] = []
-
-				raw_page_source = raw_page_source[sem_end_div + len(semester_divider_end):]
-
-				sem_start_div = raw_page_source.find(semester_divider_start)
-
-				extract_urls_source = raw_page_source[:sem_start_div]
-
-				#print("EXTRACT TEXT: " + extract_urls_source)
-
-				# extract course numbers for this semester. These come in the form of links, e.g.,
-				# https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=251169&semester=2022S.
-				extract_course_div = "courseNr="
-				i = 0
-				while extract_urls_source.find(extract_course_div) != -1:
-					course_pos1 = extract_urls_source.find(extract_course_div)
-					extract_urls_source = extract_urls_source[course_pos1 + len(extract_course_div):]
-					found_course_number = extract_urls_source[:extract_urls_source.find("&")]
-					print("found course: " + found_course_number)
-
-					# append the course to the list in the dict (with the index being the semester)
-					collected_courses[process_semester].append(found_course_number)
-					i += 1
-				#print("i: " + str(i) + "\n\n")
-
-			#print("\n\n\n")
-			#print(collected_courses)
-			#print("\n\n\n")
-
-			collected_courses_keys = list( collected_courses.keys() )
-
-			# remove duplicates from the lists (in the dict)
-			for _ in collected_courses_keys:
-				collected_courses[_] = list(dict.fromkeys(collected_courses[_]))
-
-			# add the extracted courses to the collected-div
-			return_collected_courses_list[selected_semester] = collected_courses
-
-			# clear the dict
-			collected_courses = {}
-
-		"""
-
-
-
-
-
+			if fetch_single_semester == True:
+				print("break (single semester fetch)")
+				break
 
 			#time.sleep(20000)
 		#print("\n\n\n")
@@ -842,7 +735,7 @@ class crawler:
 
 		return return_collected_data
 
-	def extract_courses(self, driver, URL, pylogs_filepointer):
+	def extract_courses(self, driver, URL, pylogs_filepointer, fetchSingleSem):
 		"""Extract courses from the (study) program.
 
 		This function loops through all years (HTML select element)
@@ -873,11 +766,30 @@ class crawler:
 
 		extracted_course_URLs = []
 
-		#for i in selector.options:
-		    #print(i.get_attribute('innerHTML'))
+		# get the values of the select dropdown element
+		semester_list = {}
+		# loop through all semesters, extract the desired information
+		for option in selector.options:
+			semester_option_text = option.text
+			semester_option_attribute = option.get_attribute('value')
+			semester_list[semester_option_attribute] = ""
+			#print(semester_option_text + "|" + semester_option_attribute)
+
+		semester_iterate_list = list(semester_list.keys())
+
+		# if the (single) semester is not in the course list -> skip to the end of the function
+		if fetchSingleSem not in semester_iterate_list:
+			pylogs.write_to_logfile(pylogs_filepointer, 'fetchSingleSem (' + str(fetchSingleSem) + ') not in list -> skip')
+			return extracted_course_URLs
 
 		# loop through all semesters and store all links to the courses
 		for index in range(len(selector.options)):
+			# fetch single semester -> jump to this semester (extract only this one).
+			# Set variable index to the index of the list corresponding to fetchSingleSem.
+			if fetchSingleSem != False:
+				index = semester_iterate_list.index(fetchSingleSem)
+				pylogs.write_to_logfile(pylogs_filepointer, 'single semester override: ' + str(index) )
+
 			search_selector1 = driver.page_source.find("j_id_2d:semesterSelect")
 			search_selector2 = driver.page_source.find("j_id_2e:semesterSelect")
 
@@ -910,6 +822,9 @@ class crawler:
 				if href_element.find("courseDetails") != -1:
 					extracted_course_URLs.append(href_element)
 
+			if fetchSingleSem != False:
+				break
+
 		# remove years so that only the courses remain. Later on, years
 		# will be crawled individually.
 		for i in range(len(extracted_course_URLs)):
@@ -929,7 +844,8 @@ class crawler:
 		acad_prgm_studycode,
 		pylogs_filepointer,
 		f_failed_downloads,
-		download_files = False
+		fetchSingleSem,
+		download_files = False,
 	):
 		"""Process a single course and extract relevenat information.
 		"""
@@ -1034,6 +950,11 @@ class crawler:
 
 		semester_iterate_list = list(semester_list.keys())
 
+		# abort if desired semester (to extract) is not in the select list
+		if fetchSingleSem not in semester_iterate_list:
+			pylogs.write_to_logfile(pylogs_filepointer, 'fetchSingleSem (' + str(fetchSingleSem) + ') not in list -> skip')
+			return return_info_dict, amount_downloads, amt_of_semesters_processed, unknown_fields
+
 		pylogs.write_to_logfile(pylogs_filepointer, 'semester_iterate_list: ' + str(semester_iterate_list))
 
 		for select_semester in range(len(semester_iterate_list)):
@@ -1063,6 +984,12 @@ class crawler:
 				driver.find_element("id", "j_id_2d:j_id_2o").click()
 				time.sleep(2*self.sleeptime_fetchpage)
 
+			# fetch single semester -> jump to this semester (extract only this one).
+			# Set variable select_semester to the index of the list corresponding to fetchSingleSem.
+			if fetchSingleSem != False:
+				select_semester = semester_iterate_list.index(fetchSingleSem)
+				pylogs.write_to_logfile(pylogs_filepointer, 'single semester override: ' + str(select_semester) )
+
 			# handling the select element
 			#
 			# determine which semesterFrom selector should be called.
@@ -1077,7 +1004,7 @@ class crawler:
 				# determine the position in the source for the selector (endpoint)
 				search_sel_endpoint = cut_str.find('"')
 				selector_endnumber = cut_str[:search_sel_endpoint]
-				#c ompose the selector (string + number
+				# compose the selector (string + number)
 				compose_selector = sel_string + selector_endnumber
 				# call the selector
 				pylogs.write_to_logfile(pylogs_filepointer, "semesterForm selector: "
@@ -1408,6 +1335,10 @@ class crawler:
 				)
 
 				return_info_dict[selected_semester + self.language] = extract_dict
+
+			# get only a single semester -> break here if not False
+			if fetchSingleSem != False:
+				break
 
 		# download files
 		amount_downloads = self.download_course_files(

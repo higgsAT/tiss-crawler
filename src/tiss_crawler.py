@@ -74,6 +74,19 @@ total_page_crawls = 0
 # True -> the insertion statements are written to a file on the disk
 writeInsertToFile = True
 
+# insertion override: if this variable is _not_ set to "", the name of the table
+# into which the data is being inserted is defined by this variable (and not the
+# academic program name)
+insertIntoTableName = "crawl2023S"
+
+# if enabled (fetchSingleSem != False), only the semester defined by the variable
+# will be crawled. The given value must be equivalent to the value in the option/
+# dropdown semester select, e.g., 2021W, 2017S, etc. The idea of this variable is,
+# to only fetch course information about courses for this (single) semester. Database
+# integrity testing (whether the course is already in the DB) will be skipped since
+# this data is used to add data to the DB (no "initial crawl").
+fetchSingleSem = "2023S"
+
 def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_name):
 	"""Insert data into a SQL database
 	"""
@@ -131,6 +144,10 @@ def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_na
 		course_already_in_DB = False
 
 		if course_already_in_DB == False:
+			# override table name in which the data is to be inserted
+			if insertIntoTableName != "":
+				academic_program_name = insertIntoTableName
+
 			# perform the insertion into the DB
 			insertStatement = (
 				"INSERT INTO `" + academic_program_name + "` (page_fetch_lang, \
@@ -338,28 +355,34 @@ def process_courses(
 		course_already_in_DB = False
 		found_in_table = ""
 
-		"""
-		loop through all fetched courses and determine whether the current (to be processed)
-		course is in any table. This data does not need to be updated since after one passthrough
-		of an academic program, the list is read again and if the program is restarted the list
-		is re-read also.
-		"""
-		for _ in processed_courses_list:
-			for key in _.keys():
-				if process_course_number in _[key]:
-					found_in_table = key
-					course_already_in_DB = True
-					pylogs.write_to_logfile(f_runtime_log, "course: " +
-						process_course_number + " found in DB(" + str(found_in_table) + ") -> skip"
-					)
-					break
+		# skip DB check (see comment at variable 'fetchSingleSem' definition)
+		if fetchSingleSem == False:
+			"""
+			loop through all fetched courses and determine whether the current (to be processed)
+			course is in any table. This data does not need to be updated since after one passthrough
+			of an academic program, the list is read again and if the program is restarted the list
+			is re-read also.
+			"""
+			for _ in processed_courses_list:
+				for key in _.keys():
+					if process_course_number in _[key]:
+						found_in_table = key
+						course_already_in_DB = True
+						pylogs.write_to_logfile(f_runtime_log, "course: " +
+							process_course_number + " found in DB(" + str(found_in_table) + ") -> skip"
+						)
+						break
 
-		# TODO:	implement this check in crawl.py instead of making another
-		#			call to check_course_exists() here
-		#process_course_number = temp_course_number[:3] + "." + temp_course_number [3:]
+			# TODO:	implement this check in crawl.py instead of making another
+			#			call to check_course_exists() here
+			#process_course_number = temp_course_number[:3] + "." + temp_course_number [3:]
 
-		check_url = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=" + temp_course_number
-		course_exists = driver_instance.check_course_exists(driver, check_url)
+			check_url = "https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=" + temp_course_number
+			course_exists = driver_instance.check_course_exists(driver, check_url)
+		# override the check if the course exists (only used for bruteforce data, which
+		# is not always consistent (reports courses for existing despite the course not existing
+		else:
+			course_exists = True
 
 		if course_already_in_DB == False and course_exists:
 			# process the course
@@ -373,6 +396,7 @@ def process_courses(
 				acad_prgm_studycode,
 				pylogs_filepointer,
 				f_failed_downloads,
+				fetchSingleSem,
 				True
 			)
 
@@ -413,9 +437,11 @@ pylogs.write_to_logfile(f_runtime_log_global, "logging_academic_programs: " + lo
 pylogs.write_to_logfile(f_runtime_log_global, "logging_queued_courses: " + logging_queued_courses)
 
 # initiate driver (instance)
-crawl_delay = 5
+crawl_delay = 7
 pylogs.write_to_logfile(f_runtime_log_global, "initiating driver")
 pylogs.write_to_logfile(f_runtime_log_global, "crawl_delay: " + str(crawl_delay))
+pylogs.write_to_logfile(f_runtime_log_global, "fetchSingleSem: " + str(fetchSingleSem))
+
 driver_instance = crawl.crawler(False, 800, 600, crawl_delay)
 driver = driver_instance.init_driver()
 
@@ -545,7 +571,9 @@ for process_acad_prgm in acad_program_list[:]:
 		"/unkown_field_stats_" + pylogs.get_time())
 	f_failed_downloads = pylogs.open_logfile(acad_program_path_logs +
 		"/failed_download_stats_" + pylogs.get_time())
-	f_insertionStatements = pylogs.open_logfile(acad_program_path_logs +
+
+	# save insertion statement directly into logs folder
+	f_insertionStatements = pylogs.open_logfile(root_dir + logging_folder +
 		"/insertion_statements" + pylogs.get_time())
 
 	pylogs.write_to_logfile(f_runtime_log_global, "f_runtime_log: " +
@@ -561,7 +589,7 @@ for process_acad_prgm in acad_program_list[:]:
 	# process_acad_prgm_URL == " " for queued courses but no queued academic programs
 	if process_acad_prgm_URL != " ":
 		# Take the URL of an academic program and extract all corresponding courses
-		acad_course_list_fetch = driver_instance.extract_courses(driver, process_acad_prgm_URL, f_runtime_log)
+		acad_course_list_fetch = driver_instance.extract_courses(driver, process_acad_prgm_URL, f_runtime_log, fetchSingleSem)
 		pylogs.write_to_logfile(f_runtime_log, '#queued academic courses (' +
 			str(len(acad_course_list_fetch)) + "):")
 
@@ -577,7 +605,7 @@ for process_acad_prgm in acad_program_list[:]:
 		pylogs.write_to_logfile(f_runtime_log, acad_course_list[i] + "|" + process_acad_prgm_name, False)
 	f.close()
 
-	# extract course information for the academic course´
+	# extract course information for the academic course
 	process_courses(
 		acad_course_list,
 		process_acad_prgm_name,
