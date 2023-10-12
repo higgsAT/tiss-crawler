@@ -120,10 +120,10 @@ def write_to_file(filepointer, msg):
 processed_courses_list = fetch_processed_courses()
 
 # variable declaration / (web)driver initation
-crawl_delay = 5
+crawl_delay = 10
 
 # check course numbers (brute force) in the range between these two variables
-check_course_start = 808510
+check_course_start = 511079
 check_course_end = 1000000
 
 driver_instance = crawl.crawler(False, 800, 600, crawl_delay)
@@ -135,8 +135,18 @@ f_invalid_courses = open("logs/courses_invalid.txt", "a")
 f_courses_in_DB = open("logs/courses_already_in_DB.txt", "a")
 
 for _ in range(check_course_start, check_course_end):
-	# generate course number (zerofill)
-	check_course_number = str(_).zfill(6)
+	# generate course number (zerofill) - 000000 -> 999999
+	#check_course_number = str(_).zfill(6)
+
+	# generate course number (zerofill) - 000A00 -> 999A99
+	_zfill = list(str(_).zfill(6) )
+
+	# skip duplicates where [3] = 1, 2, ..., 9´ (don't process redundant duplicates)
+	if (int(_zfill[3]) > 0):
+		continue
+
+	_zfill[3] = 'K'
+	check_course_number = ''.join(_zfill)
 
 	print ( "checking: " + str(check_course_number) )
 

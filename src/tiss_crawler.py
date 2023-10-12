@@ -226,7 +226,7 @@ def process_courses(
 	"""Extract desired information for each course.
 
 	This function takes a list of URLs pointing to courses
-	corresponding to an academic program. This list may look similar like:
+	corresponding to an academic program. This list may look like:
 	https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=253G61
 	https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=104590
 	https://tiss.tuwien.ac.at/course/courseDetails.xhtml?courseNr=264219

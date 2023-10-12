@@ -228,8 +228,8 @@ class crawler:
 		selected sequentially. For each year, all courses are extracted and sorted corresponding
 		to their semester. The extracted data is returnd via the dict return_collected_courses_list:
 
-		This dict (example below) consists of indices defined as the years and the content
-		is another dict with indices being the semesters and the data a list of the courses:
+		This dict (example below) consists of indices (keys) defined as the years and the content
+		is another dict with indices (keys) being the semesters and the data a list of the courses:
 
 		return_collected_courses_list
 		{
