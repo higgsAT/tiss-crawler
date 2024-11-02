@@ -218,7 +218,7 @@ class crawler:
 		# wait for the page to be loaded correctly (JS)
 		time.sleep(self.sleeptime_fetchpage)
 
-	def process_acad_prgm(self, driver, process_info, fetch_single_semester = False):
+	def process_acad_prgm(self, driver, process_info, fetch_single_semester = True):
 		"""Takes the output from extract_academic_programs(...) and processes it.
 
 		Example of the variable 'process_info':
@@ -348,7 +348,7 @@ class crawler:
 		# START -> 2023S, 2022W, 2022S, 2021W, 2021S, 2020W, 2020S, ... <- END
 		# From the starting semester (2023S in the example above), continue until
 		# there is no available page  ("Page not found" reached)
-		select_process_semester = "2021W"
+		select_process_semester = "2024W"
 
 		# process (decreasing) semesters until the page (course) does not exist
 		while True:
@@ -754,6 +754,8 @@ class crawler:
 		# selector element for year(semester) selection
 		search_selector1 = driver.page_source.find("j_id_2d:semesterSelect")
 		search_selector2 = driver.page_source.find("j_id_2e:semesterSelect")
+		search_selector3 = driver.page_source.find("j_id_2f:semesterSelect")
+		search_selector4 = driver.page_source.find("j_id_2i:semesterSelect")
 
 		if search_selector1 != -1:
 			selector = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
@@ -761,8 +763,15 @@ class crawler:
 		elif search_selector2 != -1:
 			selector = Select(driver.find_element("name", "j_id_2e:semesterSelect"))
 			pylogs.write_to_logfile(pylogs_filepointer, 'selected selector2: j_id_2e:semesterSelect')
+		elif search_selector3 != -1:
+			selector = Select(driver.find_element("name", "j_id_2f:semesterSelect"))
+			pylogs.write_to_logfile(pylogs_filepointer, 'selected selector3: j_id_2f:semesterSelect')
+		elif search_selector4 != -1:
+			selector = Select(driver.find_element("name", "j_id_2i:semesterSelect"))
+			pylogs.write_to_logfile(pylogs_filepointer, 'selected selector3: j_id_2i:semesterSelect')
+
 		else:
-			pylogs.write_to_logfile(pylogs_filepointer, 'no selector1 found (2d/2e)')
+			pylogs.write_to_logfile(pylogs_filepointer, 'no selector1 found (2d/2e/2f/2i)')
 
 		extracted_course_URLs = []
 
@@ -792,6 +801,8 @@ class crawler:
 
 			search_selector1 = driver.page_source.find("j_id_2d:semesterSelect")
 			search_selector2 = driver.page_source.find("j_id_2e:semesterSelect")
+			search_selector3 = driver.page_source.find("j_id_2f:semesterSelect")
+			search_selector4 = driver.page_source.find("j_id_2i:semesterSelect")
 
 			if search_selector1 != -1:
 				#selector = Select(driver.find_element("name", "j_id_2d:semesterSelect"))
@@ -801,8 +812,17 @@ class crawler:
 				selector = Select(driver.find_element("name", "j_id_2e:semesterSelect"))
 				pylogs.write_to_logfile(pylogs_filepointer, 'selected selector2: j_id_2e:semesterSelect')
 				select = Select(driver.find_element("name", "j_id_2e:semesterSelect"))
+			elif search_selector3 != -1:
+				selector = Select(driver.find_element("name", "j_id_2f:semesterSelect"))
+				pylogs.write_to_logfile(pylogs_filepointer, 'selected selector2: j_id_2f:semesterSelect')
+				select = Select(driver.find_element("name", "j_id_2f:semesterSelect"))
+			elif search_selector4 != -1:
+				selector = Select(driver.find_element("name", "j_id_2i:semesterSelect"))
+				pylogs.write_to_logfile(pylogs_filepointer, 'selected selector2: j_id_2i:semesterSelect')
+				select = Select(driver.find_element("name", "j_id_2i:semesterSelect"))
+
 			else:
-				pylogs.write_to_logfile(pylogs_filepointer, 'no selector2 found (2d/2e)')
+				pylogs.write_to_logfile(pylogs_filepointer, 'no selector2 found (2d/2e/2f/2i)')
 
 			select.select_by_index(index)
 
@@ -892,13 +912,17 @@ class crawler:
 		if course_not_available1 == -1 and course_not_available2 == -1:
 			source_selector_j25 = driver.page_source.find("semesterForm:j_id_25")
 			source_selector_j26 = driver.page_source.find("semesterForm:j_id_26")
+			source_selector_j29 = driver.page_source.find("semesterForm:j_id_29")
 
 			if source_selector_j25 != -1:
 				selector = Select(driver.find_element("name", "semesterForm:j_id_25"))
 			elif source_selector_j26 != -1:
 				selector = Select(driver.find_element("name", "semesterForm:j_id_26"))
+			elif source_selector_j29 != -1:
+				selector = Select(driver.find_element("name", "semesterForm:j_id_29"))
+
 			else:
-				print("neither j_id_25 nor j_id_26 selector was found")
+				print("selector j_id_25/j_id_26/j_id_29 not found")
 
 		else:
 			# Caused by not being logged in ?! - not likely
@@ -911,11 +935,23 @@ class crawler:
 
 			source_selector_jid2n = driver.page_source.find("sj_id_2c:j_id_2n")
 			source_selector_jid2o = driver.page_source.find("j_id_2d:j_id_2o")
+			source_selector_jid2g = driver.page_source.find("j_id_2g:j_id_2o")
+
+			print("~~~~--->" + str(source_selector_jid2n) + "|" +
+				str(source_selector_jid2o) + str(source_selector_jid2g)
+			)
+
 
 			if source_selector_jid2n != -1:
 				driver.find_element("id", "j_id_2c:j_id_2n").click()
 			elif source_selector_jid2o != -1:
 				driver.find_element("id", "j_id_2d:j_id_2o").click()
+			elif source_selector_jid2g != -1:
+				driver.find_element("name", "j_id_2g:j_id_2o").click()
+
+
+
+
 			else:
 				pylogs.write_to_logfile(pylogs_filepointer, "neither source_selector_jid2n nor source_selector_jid2o button id was found")
 				pylogs.write_to_logfile(pylogs_filepointer, str(driver.page_source))
@@ -926,14 +962,26 @@ class crawler:
 			# reroute to selector j_id_26
 			source_selector_j_26 = driver.page_source.find("semesterForm:j_id_26")
 			source_selector_j_27 = driver.page_source.find("semesterForm:j_id_27")
+			source_selector_j_29 = driver.page_source.find("semesterForm:j_id_29")
+			source_selector_j_2o = driver.page_source.find("j_id_2g:j_id_2o")
 
 			pylogs.write_to_logfile(pylogs_filepointer, 'source_selector_j_26: ' + str(source_selector_j_26))
 
 			if source_selector_j_26 != -1:
+				print("selector: source_selector_j_26")
 				selector = Select(driver.find_element("name", "semesterForm:j_id_26"))
 			elif source_selector_j_27 != -1:
+				print("selector: source_selector_j_27")
 				selector = Select(driver.find_element("name", "semesterForm:j_id_27"))
+			elif source_selector_j_29 != -1:
+				print("selector: source_selector_j_29")
+				selector = Select(driver.find_element("name", "semesterForm:j_id_29"))
+			elif source_selector_j_2o != -1:
+				print("selector: source_selector_j_2o")
+				selector = Select(driver.find_element("name", "j_id_2g:j_id_2o"))
+
 			else:
+				pylogs.write_to_logfile(pylogs_filepointer, "selector (semesterForm:j_id_26, semesterForm:j_id_27, semesterForm:j_id_29) not found")
 				pylogs.write_to_logfile(pylogs_filepointer, str(driver.page_source))
 
 		# used for download folder names. Should always be set to german.
@@ -958,7 +1006,7 @@ class crawler:
 		pylogs.write_to_logfile(pylogs_filepointer, 'semester_iterate_list: ' + str(semester_iterate_list))
 
 		for select_semester in range(len(semester_iterate_list)):
-			#print("selecting: " + semester_iterate_list[select_semester])
+			print("selecting: " + str(semester_iterate_list) + "|" + str(select_semester) )
 
 			"""
 			Sometimes the course is not available ("the course is not public in this semester").
@@ -978,10 +1026,30 @@ class crawler:
 				else:
 					break
 
-				selector_skip = Select(driver.find_element("name", "j_id_2d:j_id_2l"))
-				selector_skip.select_by_visible_text(semester_iterate_list[select_semester])
+				# select semester dropdown list
+				try:
+					selector_skip = Select(driver.find_element("name", "j_id_2d:j_id_2l"))
+					selector_skip.select_by_visible_text(semester_iterate_list[select_semester])
+				except Exception as e:
+					print("error selecting name/j_id_2d:j_id_2l")
+				try:
+					selector_skip = Select(driver.find_element("name", "j_id_2g:j_id_2o"))
+					selector_skip.select_by_visible_text(semester_iterate_list[select_semester])
+				except Exception as e:
+					print("error selecting name/j_id_2g:j_id_2o")
+
 				time.sleep(self.sleeptime_fetchpage)
-				driver.find_element("id", "j_id_2d:j_id_2o").click()
+
+				# try clicking on the "continue button"
+				try:
+					driver.find_element("id", "j_id_2d:j_id_2o").click()
+				except Exception as e:
+					print("error clicking element 'id: j_id_2d:j_id_2o'. Error message: " + str(e) )
+				try:
+					driver.find_element("id", "j_id_2g:j_id_2r").click()
+				except Exception as e:
+					print("error clicking element 'id: j_id_2g:j_id_2r'. Error message: " + str(e) )
+
 				time.sleep(2*self.sleeptime_fetchpage)
 
 			# fetch single semester -> jump to this semester (extract only this one).

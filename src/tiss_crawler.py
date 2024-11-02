@@ -77,7 +77,7 @@ writeInsertToFile = True
 # insertion override: if this variable is _not_ set to "", the name of the table
 # into which the data is being inserted is defined by this variable (and not the
 # academic program name)
-insertIntoTableName = "crawl2023S"
+insertIntoTableName = "crawl2024W"
 
 # if enabled (fetchSingleSem != False), only the semester defined by the variable
 # will be crawled. The given value must be equivalent to the value in the option/
@@ -85,7 +85,7 @@ insertIntoTableName = "crawl2023S"
 # to only fetch course information about courses for this (single) semester. Database
 # integrity testing (whether the course is already in the DB) will be skipped since
 # this data is used to add data to the DB (no "initial crawl").
-fetchSingleSem = "2023S"
+fetchSingleSem = "2024W"
 
 def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_name):
 	"""Insert data into a SQL database
@@ -437,7 +437,7 @@ pylogs.write_to_logfile(f_runtime_log_global, "logging_academic_programs: " + lo
 pylogs.write_to_logfile(f_runtime_log_global, "logging_queued_courses: " + logging_queued_courses)
 
 # initiate driver (instance)
-crawl_delay = 7
+crawl_delay = 5
 pylogs.write_to_logfile(f_runtime_log_global, "initiating driver")
 pylogs.write_to_logfile(f_runtime_log_global, "crawl_delay: " + str(crawl_delay))
 pylogs.write_to_logfile(f_runtime_log_global, "fetchSingleSem: " + str(fetchSingleSem))

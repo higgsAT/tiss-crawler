@@ -8,8 +8,18 @@ from config import *
 
 # TODO: set language (subsemester) to english (DB!)
 
+write_folder = root_dir + logging_folder + study_prgms_folder
+study_prgms_result_path = write_folder + "study_programs_insert" + ".txt"
+
+# check if file exist. If not -> cout warning and stop the program
+try:
+	f_study_programs_insert = open(study_prgms_result_path, "a")
+except Exception as e:
+	print("error openening file (" + str(e) + ") -> create file '" + study_prgms_result_path + "'")
+	sys.exit()
+
 # initiate driver (instance)
-crawl_delay = 10
+crawl_delay = 20
 driver_instance = crawl.crawler(False, 800, 600, crawl_delay)
 driver = driver_instance.init_driver()
 
@@ -55,7 +65,7 @@ if len(acad_program_list1) != len(acad_program_list2):
 	raise Exception("Mismatching length of lists containing the study programs (ger != en)")
 
 # skip to a certain point
-_start = 114
+_start = 80
 
 # extract courses for the study programs (depending on semester)
 # set_language = "de" or "en"
