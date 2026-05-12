@@ -19,14 +19,14 @@ except Exception as e:
 	sys.exit()
 
 # initiate driver (instance)
-crawl_delay = 20
+crawl_delay = 5
 driver_instance = crawl.crawler(False, 800, 600, crawl_delay)
 driver = driver_instance.init_driver()
 
 # log in to get all available semester options (not logged in -> max. ~ 3 semesters available)
 # while being logged in, the SELECT options reach further into the past (~ 6 semester), using
 # URL $_GET-parameters, it'S possible to even go (much) further back into time without loggin in!
-driver_instance.tiss_login(driver)
+# driver_instance.tiss_login(driver)
 
 # determine the set language of TISS
 set_language = driver_instance.get_language(driver)
@@ -65,7 +65,7 @@ if len(acad_program_list1) != len(acad_program_list2):
 	raise Exception("Mismatching length of lists containing the study programs (ger != en)")
 
 # skip to a certain point
-_start = 80
+_start = 0
 
 # extract courses for the study programs (depending on semester)
 # set_language = "de" or "en"

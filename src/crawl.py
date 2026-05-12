@@ -105,17 +105,22 @@ class crawler:
 
 		This function performs a login attempt which is verified
 		afterwards.
+
+
+		TODO: This function needs to be tested and updated using valid
+		login credentials!
+
 		"""
 		print("trying to log in")
 
 		# head to the login page
-		URLlogin = "https://idp.zid.tuwien.ac.at/simplesaml/module.php/core/loginuserpass.php?AuthState=_1d7ffb3e1f13ab208155e8e359ef5ce8b081b6202f%3Ahttps%3A%2F%2Fidp.zid.tuwien.ac.at%2Fsimplesaml%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fauth%26RelayState%3Dhttps%253A%252F%252Flogin.tuwien.ac.at%252Fportal%26cookieTime%3D1654809688"
+		URLlogin = "https://idp.zid.tuwien.ac.at/simplesaml/module.php/core/loginuserpass?AuthState=_18da8900a6d3be44640608dd98360fc8a38f7caa00%3Ahttps%3A%2F%2Fidp.zid.tuwien.ac.at%2Fsimplesaml%2Fmodule.php%2Fsaml%2Fidp%2FsingleSignOnService%3Fspentityid%3Dhttps%253A%252F%252Ftiss.tuwien.ac.at%252Fadmin%252Fauthentifizierung%252Fsaml_metadaten%26cookieTime%3D1761506278"
 
 		self.get_page(driver, URLlogin)
 
 		# find username/password field and send the info the input fields
-		driver.find_element("name", "username").send_keys(TissUsername)
-		driver.find_element("name", "password").send_keys(TissPassword)
+		driver.find_element("id", "username").send_keys(TissUsername)
+		driver.find_element("id", "password").send_keys(TissPassword)
 
 		# click login button
 		driver.find_element("id", "samlloginbutton").click()
@@ -348,7 +353,7 @@ class crawler:
 		# START -> 2023S, 2022W, 2022S, 2021W, 2021S, 2020W, 2020S, ... <- END
 		# From the starting semester (2023S in the example above), continue until
 		# there is no available page  ("Page not found" reached)
-		select_process_semester = "2024W"
+		select_process_semester = "2025W"
 
 		# process (decreasing) semesters until the page (course) does not exist
 		while True:
@@ -913,6 +918,7 @@ class crawler:
 			source_selector_j25 = driver.page_source.find("semesterForm:j_id_25")
 			source_selector_j26 = driver.page_source.find("semesterForm:j_id_26")
 			source_selector_j29 = driver.page_source.find("semesterForm:j_id_29")
+			source_selector_j2d = driver.page_source.find("semesterForm:j_id_2d")
 
 			if source_selector_j25 != -1:
 				selector = Select(driver.find_element("name", "semesterForm:j_id_25"))
@@ -920,9 +926,11 @@ class crawler:
 				selector = Select(driver.find_element("name", "semesterForm:j_id_26"))
 			elif source_selector_j29 != -1:
 				selector = Select(driver.find_element("name", "semesterForm:j_id_29"))
+			elif source_selector_j2d != -1:
+				selector = Select(driver.find_element("name", "semesterForm:j_id_2d"))
 
 			else:
-				print("selector j_id_25/j_id_26/j_id_29 not found")
+				print("selector j_id_25/j_id_26/j_id_29/j_id_2d not found")
 
 		else:
 			# Caused by not being logged in ?! - not likely
@@ -964,6 +972,7 @@ class crawler:
 			source_selector_j_27 = driver.page_source.find("semesterForm:j_id_27")
 			source_selector_j_29 = driver.page_source.find("semesterForm:j_id_29")
 			source_selector_j_2o = driver.page_source.find("j_id_2g:j_id_2o")
+			source_selector_j_2d = driver.page_source.find("semesterForm:j_id_2d")
 
 			pylogs.write_to_logfile(pylogs_filepointer, 'source_selector_j_26: ' + str(source_selector_j_26))
 
@@ -979,6 +988,11 @@ class crawler:
 			elif source_selector_j_2o != -1:
 				print("selector: source_selector_j_2o")
 				selector = Select(driver.find_element("name", "j_id_2g:j_id_2o"))
+			elif source_selector_j_2d != -1:
+				print("selector: source_selector_j_2d")
+				selector = Select(driver.find_element("name", "semesterForm:j_id_2d"))
+
+
 
 			else:
 				pylogs.write_to_logfile(pylogs_filepointer, "selector (semesterForm:j_id_26, semesterForm:j_id_27, semesterForm:j_id_29) not found")

@@ -77,7 +77,7 @@ writeInsertToFile = True
 # insertion override: if this variable is _not_ set to "", the name of the table
 # into which the data is being inserted is defined by this variable (and not the
 # academic program name)
-insertIntoTableName = "crawl2024W"
+insertIntoTableName = "crawl2025W"
 
 # if enabled (fetchSingleSem != False), only the semester defined by the variable
 # will be crawled. The given value must be equivalent to the value in the option/
@@ -85,7 +85,7 @@ insertIntoTableName = "crawl2024W"
 # to only fetch course information about courses for this (single) semester. Database
 # integrity testing (whether the course is already in the DB) will be skipped since
 # this data is used to add data to the DB (no "initial crawl").
-fetchSingleSem = "2024W"
+fetchSingleSem = "2025W"
 
 def sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_name):
 	"""Insert data into a SQL database
@@ -342,6 +342,8 @@ def process_courses(
 		append_dict = {query_table: result_list_unique}
 		processed_courses_list.append(dict(append_dict))
 
+	count_amount_crawls = 0
+
 	# work the process queue
 	for process_course in acad_course_list[:]:
 		# check if the course is already in the DB, if not -> process this course.
@@ -351,6 +353,9 @@ def process_courses(
 		#		  is skipped in this case!
 		temp_course_number = process_course[process_course.find('=') + 1:]
 		process_course_number = temp_course_number[:3] + "." + temp_course_number [3:]
+
+		# overwrite course number for testing
+		# process_course_number = "389.156"
 
 		course_already_in_DB = False
 		found_in_table = ""
@@ -385,7 +390,8 @@ def process_courses(
 			course_exists = True
 
 		if course_already_in_DB == False and course_exists:
-			# process the course
+			# process the course -> do not download files (no login credentials available
+			# at the moment)
 			return_info_dict, \
 			ret_dwnlds, \
 			ret_crawls, \
@@ -397,7 +403,7 @@ def process_courses(
 				pylogs_filepointer,
 				f_failed_downloads,
 				fetchSingleSem,
-				True
+				False
 			)
 
 			# update amount of downloads and page crawls
@@ -410,6 +416,17 @@ def process_courses(
 			pylogs.write_to_logfile(f_runtime_log, 'amount of unkown fields: ' + str(len(unknown_fields)))
 			for list_element in unknown_fields:
 				pylogs.write_to_logfile(f_runtime_unknowns, list_element)
+
+			"""
+			# reset the browser window after x amount of crawls
+			if (count_amount_crawls > 10):
+				count_amount_crawls = 0
+
+				driver_instance.close_driver(driver, f_runtime_log_global)
+				time.sleep(10)
+				driver_instance = crawl.crawler(False, 800, 600, crawl_delay)
+				driver = driver_instance.init_driver()
+			"""
 
 			# SQL insert the returned data
 			sql_insert_courses(return_info_dict, pylogs_filepointer, academic_program_name)
@@ -424,6 +441,8 @@ def process_courses(
 			f.write(acad_course_list[i] + "|" + academic_program_name + "\n")
 		f.close()
 
+		count_amount_crawls = count_amount_crawls + 1
+
 # global logfile
 f_runtime_log_global = pylogs.open_logfile(root_dir + logging_folder + "runtime_global_log_" + pylogs.get_time())
 
@@ -437,7 +456,7 @@ pylogs.write_to_logfile(f_runtime_log_global, "logging_academic_programs: " + lo
 pylogs.write_to_logfile(f_runtime_log_global, "logging_queued_courses: " + logging_queued_courses)
 
 # initiate driver (instance)
-crawl_delay = 5
+crawl_delay = 20
 pylogs.write_to_logfile(f_runtime_log_global, "initiating driver")
 pylogs.write_to_logfile(f_runtime_log_global, "crawl_delay: " + str(crawl_delay))
 pylogs.write_to_logfile(f_runtime_log_global, "fetchSingleSem: " + str(fetchSingleSem))
@@ -448,9 +467,17 @@ driver = driver_instance.init_driver()
 # set the timeout for page loads (in units of seconds)
 driver.set_page_load_timeout(120)
 
+
+
+# print("exit")
+# sys.exit()
+
+
+
+
 # log in to get more semesters in the academic program
 # which results in more courses found.
-driver_instance.tiss_login(driver)
+# driver_instance.tiss_login(driver)
 
 # check the state of eventual previous crawls
 if not os.path.exists(logging_folder):
@@ -600,6 +627,7 @@ for process_acad_prgm in acad_program_list[:]:
 
 	# write fetched courses into the logfile.
 	f = open(logging_folder + logging_queued_courses, "w")
+
 	for i in range(len(acad_course_list)):
 		f.write(acad_course_list[i] + "|" + process_acad_prgm_name + "\n")
 		pylogs.write_to_logfile(f_runtime_log, acad_course_list[i] + "|" + process_acad_prgm_name, False)
