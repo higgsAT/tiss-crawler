@@ -61,7 +61,7 @@ tiss-crawler/
 
 ## Configuration (`config.yaml`)
 ```yaml
-semester: WS2025
+semester: 2025W
 
 output:
   base_dir: output/
@@ -124,10 +124,10 @@ This crawler does not write to a database directly. After crawling, a separate e
 
 ## Usage
 ```bash
-python crawler.py --semester WS2025
+python crawler.py --semester 2025W
 ```
 
 Resuming an interrupted crawl:
 ```bash
-python crawler.py --semester WS2025 --resume
+python crawler.py --semester 2025W --resume
 ```
