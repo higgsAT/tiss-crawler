@@ -1,0 +1,12 @@
+semester: WS2025
+
+output:
+   base_dir: output/
+
+crawl:
+   sleep_between_requests: 2          # seconds between requests
+   resume: true                       # pick up from existing state.json if present
+
+logging:
+   level: INFO
+   file: output/logs/crawler.log
