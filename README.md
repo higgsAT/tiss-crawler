@@ -89,7 +89,8 @@ output/
       <course_number>__DE__<date>.html
       <course_number>__EN__<date>.html
   data/
-    courses_<semester>.json           # structured extracted data for all courses
+    courses_<semester>.json           # extracted data according to "Extracted course data" above
+    study_programs_<semester>.json    # all courses belonging to a certain study program
   logs/
     crawler.log
 ```
