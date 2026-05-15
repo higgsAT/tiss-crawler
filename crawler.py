@@ -2,8 +2,10 @@ import argparse
 import logging
 from pathlib import Path
 import sys
+import time
 import yaml
 
+from src import http_client
 from src import logger
 from src import state
 from src.phases import curricula
@@ -89,6 +91,17 @@ if __name__ == "__main__":
 		print("third phase")
 		# TODO: process discovered courses via courses_crawl.py
 
+	else:
+		log.error(f"Unknown program state: {saved_state['courses']['queue']}, {saved_state['curricula']['queue']}")
+		raise ValueError(f"Unknown program state: {saved_state['courses']['queue']}, {saved_state['curricula']['queue']}")
+
+	print(time.time())
+
+
+	http_client = http_client.HttpClient(config)
+	http_client.fetch("URL1")
+	http_client.fetch("URL2")
+	http_client.fetch("URL3")
 
 
 	sys.exit()

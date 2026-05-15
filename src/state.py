@@ -6,6 +6,7 @@ On startup: load state if exists, skip already-fetched items, continue from wher
 
 The state is stored in output/state.json and has the following formatting:
 {
+  "last_fetch_time": "1778860682.7065003",        <- time of the last page fetch (to ensure sleep_between_requests in config.yaml)
   "semester": "2025W",                            <- requested semester to process
   "curricula": {                                  <- everything related to processing of 'study programs'
     "queue": ["arch_bach", "..."]                 <- list of all possible study programs which will be processed
