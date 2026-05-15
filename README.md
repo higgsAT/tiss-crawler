@@ -14,13 +14,13 @@ This is a rewrite of [v1](https://github.com/higgsAT/tiss-crawler/commit/9da4719
 ## Crawl workflow
 The crawler operates in three distinct, resumable phases:
 
-**Phase 1 — Fetch all Studienpläne**
-A single TISS page lists all study programs. The crawler fetches this page and extracts ~50 Studienplan URLs.
+**Phase 1: Fetch all curricula**
+A single TISS page lists all curricula. The crawler fetches this page and extracts ~50 curricula URLs.
 
-**Phase 2 — Extract courses per Studienplan**
-Each Studienplan page is fetched and all corresponding courses (Lehrveranstaltungen) are extracted, including the mapping of which course belongs to which Studienplan. This mapping is retained for later use.
+**Phase 2: Extract courses per curricula**
+Each curricula page is fetched and all corresponding courses (Lehrveranstaltungen) are extracted, including the mapping of which course belongs to which curricula. This mapping is retained for later use.
 
-**Phase 3 — Crawl each unique course**
+**Phase 3: Crawl each unique course**
 Duplicates are removed from the full course list. Each unique course is fetched twice — once in German, once in English. Raw HTML is stored and structured data is extracted.
 
 ---
@@ -45,8 +45,8 @@ tiss-crawler/
   requirements.txt
   src/
     phases/
-      studienplaene.py                # Phase 1: fetch all Studienpläne
-      courses_discovery.py            # Phase 2: extract courses per Studienplan
+      curricula.py                    # Phase 1: fetch all Studienpläne
+      courses_discovery.py            # Phase 2: extract courses per curricula
       courses_crawl.py                # Phase 3: crawl each unique course
     parser.py                         # BeautifulSoup extraction logic
     state.py                          # load/save crawl state
@@ -105,7 +105,7 @@ Crawl state is persisted in `output/state.json` after each fetch. On restart, th
 ---
 
 ## Rate limiting
-Requests are throttled with a configurable sleep between fetches to avoid hitting TISS rate limits. No authentication is required — all course and Studienplan data is publicly accessible.
+Requests are throttled with a configurable sleep between fetches to avoid hitting TISS rate limits. No authentication is required — all course and curricula data is publicly accessible.
 
 ---
 

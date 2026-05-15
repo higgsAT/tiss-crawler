@@ -6,7 +6,7 @@ import yaml
 
 from src import logger
 from src import state
-from src.phases import studienplaene
+from src.phases import curricula
 
 def load_config(config_file: str) -> dict:
 	"""
@@ -67,8 +67,34 @@ if __name__ == "__main__":
 		raise ValueError(f"Mismatch between semester in config.yaml/CLI parameter:\
 '{semester}' and state.json: '{saved_state['semester']}'")
 
-	# fetch studienplaene (study plans)
-	studienplaene.fetch_studienplaene()
+	# determine at which "phase" the program was stopped:
+	# Phase 1: Fetch all curricula
+	# Phase 2: Extract courses per curricula
+	# Phase 3: Crawl each unique course
+
+	# both queues (study programs and courses) empty -> Phase 1.
+	# This assumes a "start from zero" happens
+	if (not saved_state['curricula']['queue'] and
+		not saved_state['courses']['queue']):
+		print("first phase")
+		# TODO: extract curricula via curricula.py
+
+	# curricula queue not empty -> proceed in working that off -> Phase 2
+	elif saved_state['curricula']['queue']:
+		print("second phase")
+		# TODO: extract courses from curricula via courses_discovery.py
+
+	# study program - queue empty but courses not empty -> Phase 3
+	elif saved_state['courses']['queue']:
+		print("third phase")
+		# TODO: process discovered courses via courses_crawl.py
+
+
+
+	sys.exit()
+
+	# fetch all curricula
+	curricula.fetch_studienplaene()
 
 	# update the state in state.json
 	state.save_state(saved_state, f"{output_basedir}state.json") # save a state to the disk

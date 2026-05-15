@@ -6,8 +6,8 @@ On startup: load state if exists, skip already-fetched items, continue from wher
 
 The state is stored in output/state.json and has the following formatting:
 {
-  "semester": "WS2025",                           <- requested semester to process
-  "study_programs": {                             <- everything related to processing of 'study programs'
+  "semester": "2025W",                            <- requested semester to process
+  "curricula": {                                  <- everything related to processing of 'study programs'
     "queue": ["arch_bach", "..."]                 <- list of all possible study programs which will be processed
                                                      to extract all possible courses for this study program and semester
   },
@@ -45,7 +45,7 @@ def clear_state(semester: str, path: str) -> None:
 	"""
 	save_state({
 		"semester": semester,
-		"study_programs": {"queue": []},
+		"curricula": {"queue": []},
 		"courses": {"queue": []}
 	}, path)
 
