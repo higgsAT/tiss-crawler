@@ -78,8 +78,9 @@ if __name__ == "__main__":
 	# This assumes a "start from zero" happens
 	if (not saved_state['curricula']['queue'] and
 		not saved_state['courses']['queue']):
-		print("first phase")
-		# TODO: extract curricula via curricula.py
+
+		url_curricula = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
+		curricula.fetch_all_curricula(url_curricula, "en")
 
 	# curricula queue not empty -> proceed in working that off -> Phase 2
 	elif saved_state['curricula']['queue']:
@@ -98,16 +99,13 @@ if __name__ == "__main__":
 	print(time.time())
 
 
-	http_client = http_client.HttpClient(config)
-	http_client.fetch("URL1")
-	http_client.fetch("URL2")
-	http_client.fetch("URL3")
+	client = http_client.HttpClient(config)
+	client.fetch("URL1", "en")
+	client.fetch("URL2", "de")
+	client.fetch("URL3", "en")
 
 
 	sys.exit()
-
-	# fetch all curricula
-	curricula.fetch_studienplaene()
 
 	# update the state in state.json
 	state.save_state(saved_state, f"{output_basedir}state.json") # save a state to the disk

@@ -1,12 +1,7 @@
 import logging
 
-def fetch_studienplaene():
+def fetch_all_curricula(url: str, lang: str) -> None:
 	"""
 	"""
-	print("fetching studienpläne")
-
 	log = logging.getLogger(__name__)
-	log.info("Fetching course 101.234...")
-	log.warning("Field 'SWS' missing for course 10X.234")
-
-
+	log.info(f"fetching list of all curricula from url {url} for language {lang}")
