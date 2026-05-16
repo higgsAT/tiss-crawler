@@ -14,7 +14,7 @@ class HttpClient:
 			"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:150.0) Gecko/20100101 Firefox/150.0"
 		})
 		# self.session.get("https://tiss.tuwien.ac.at")  # establish session cookies
-
+		print("GET: https://tiss.tuwien.ac.at")
 
 	def _wait_if_needed(self) -> None:
 		"""
@@ -31,7 +31,7 @@ class HttpClient:
 
 	def _do_request(self, url: str, lang: str) -> requests.Response | None:
 		"""
-		Perform the request
+		Perform the request. Return the page source or None if an error occurs
 		"""
 		self.log.info(f"request url: {url} lang: {lang}")
 
@@ -45,9 +45,10 @@ class HttpClient:
 		self.last_fetch_time = time.time()
 		return response
 
-	def fetch(self, url: str, lang: str) -> requests.Response | None:
+	def fetch(self, url: str, lang: str) -> requests.Response:
 		"""
-		fetch an url while respecting the set time to wait between fetches according to the set config
+		Fetch an url while respecting the set time to wait between fetches according to the set config.
+		Returns the page source upon success
 		"""
 		if lang not in ("de", "en"):
 			raise ValueError(f"ValueError for set language: {lang}")

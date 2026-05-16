@@ -82,6 +82,7 @@ logging:
 output/
   state.json                          # crawl state: progress tracking + visited sets
   study_programs/
+    study_programs__<semester>.html
     <program>/
       <program_name>__<semester>.html
   courses/

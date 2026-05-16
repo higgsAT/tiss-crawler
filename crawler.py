@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
 	# check if the directories exist
 	output_basedir = config["output"]["base_dir"]
-	dir_create_check = Path(output_basedir).mkdir(parents=True, exist_ok=True)
+	Path(output_basedir).mkdir(parents=True, exist_ok=True)
 
 	# load previous state which is being resumed
 	if resume:
@@ -69,6 +69,9 @@ if __name__ == "__main__":
 		raise ValueError(f"Mismatch between semester in config.yaml/CLI parameter:\
 '{semester}' and state.json: '{saved_state['semester']}'")
 
+	# initialise http_client object (manages crawling and respects the crawl delay)
+	client = http_client.HttpClient(config)
+
 	# determine at which "phase" the program was stopped:
 	# Phase 1: Fetch all curricula
 	# Phase 2: Extract courses per curricula
@@ -78,9 +81,9 @@ if __name__ == "__main__":
 	# This assumes a "start from zero" happens
 	if (not saved_state['curricula']['queue'] and
 		not saved_state['courses']['queue']):
-
-		url_curricula = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
-		curricula.fetch_all_curricula(url_curricula, "en")
+		# url_curricula = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
+		url_curricula = "https://higgs.at"
+		curricula.fetch_all_curricula(client, url_curricula, "en", output_basedir, semester)
 
 	# curricula queue not empty -> proceed in working that off -> Phase 2
 	elif saved_state['curricula']['queue']:
@@ -96,14 +99,12 @@ if __name__ == "__main__":
 		log.error(f"Unknown program state: {saved_state['courses']['queue']}, {saved_state['curricula']['queue']}")
 		raise ValueError(f"Unknown program state: {saved_state['courses']['queue']}, {saved_state['curricula']['queue']}")
 
-	print(time.time())
+	sys.exit()
 
-
-	client = http_client.HttpClient(config)
+	sys.exit()
 	client.fetch("URL1", "en")
 	client.fetch("URL2", "de")
 	client.fetch("URL3", "en")
-
 
 	sys.exit()
 
