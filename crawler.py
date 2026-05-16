@@ -59,8 +59,7 @@ if __name__ == "__main__":
 
 	saved_state = state.load_state(f"{output_basedir}state.json") # load a state from the disk into a variable
 
-	# print the state for testing purposes (TEST)
-	state.print_state(saved_state)
+	state.print_state(saved_state) # TEST print the state for testing purposes (TEST)
 
 	# check if the given semester to process via CLI / config.yaml matches the saved state in state.json
 	if semester != saved_state['semester']:
@@ -70,7 +69,9 @@ if __name__ == "__main__":
 '{semester}' and state.json: '{saved_state['semester']}'")
 
 	# initialise http_client object (manages crawling and respects the crawl delay)
-	client = http_client.HttpClient(config)
+	url_bootstrap = config["crawl"]["url_bootstrap"]
+	url_bootstrap = "https://higgs.at" # TEST overwrite the bootstrap url for testing purposes TEST
+	client = http_client.HttpClient(config, url_bootstrap)
 
 	# determine at which "phase" the program was stopped:
 	# Phase 1: Fetch all curricula
@@ -81,9 +82,7 @@ if __name__ == "__main__":
 	# This assumes a "start from zero" happens
 	if (not saved_state['curricula']['queue'] and
 		not saved_state['courses']['queue']):
-		# url_curricula = "https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml"
-		url_curricula = "https://higgs.at"
-		curricula.fetch_all_curricula(client, url_curricula, "en", output_basedir, semester)
+		curricula.fetch_all_curricula(client, url_bootstrap, client.bootstrap_page_source, output_basedir, semester)
 
 	# curricula queue not empty -> proceed in working that off -> Phase 2
 	elif saved_state['curricula']['queue']:

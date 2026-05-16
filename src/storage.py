@@ -4,6 +4,7 @@ import logging
 
 def write_to_disk(source: str, path: str, filename: str) -> None:
 	"""
+	Write a string (page source) to the destination 'path' under the name 'filename'
 	"""
 	log = logging.getLogger(__name__)
 	log.info(f"Try to write to destination '{path}{filename}'")

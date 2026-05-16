@@ -1,20 +1,33 @@
+from playwright.sync_api import sync_playwright
 import requests
 import time
 
 import logging
 
 class HttpClient:
-	def __init__(self, config) -> None:
+	def __init__(self, config, url_bootstrap) -> None:
 		self.sleep = config['crawl']['sleep_between_requests']
-		self.last_fetch_time = None
+		self.last_fetch_time = time.time()
 		self.log = logging.getLogger(__name__)
-
 		self.session = requests.Session()
-		self.session.headers.update({
-			"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:150.0) Gecko/20100101 Firefox/150.0"
-		})
-		# self.session.get("https://tiss.tuwien.ac.at")  # establish session cookies
-		print("GET: https://tiss.tuwien.ac.at")
+
+		# bootstrap session via headless browser
+		self.log.info(f"bootstrapping cookies from url: {url_bootstrap}")
+		cookies, self.bootstrap_page_source = self._get_session_cookies(url_bootstrap)
+		self.log.info(f"bootstrapped cookies: {cookies}")
+		for cookie in cookies:
+			self.session.cookies.set(cookie['name'], cookie['value'])
+
+	def _get_session_cookies(self, url):
+		with sync_playwright() as p:
+			browser = p.chromium.launch(headless=True)
+			page = browser.new_page()
+			page.goto(url)
+			page.wait_for_load_state("networkidle")  # wait for JS redirects to settle
+			source_code = page.content()
+			cookies = page.context.cookies()
+			browser.close()
+			return cookies, source_code
 
 	def _wait_if_needed(self) -> None:
 		"""

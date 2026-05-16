@@ -5,7 +5,7 @@ from src import storage
 def fetch_all_curricula(
 	client: http_client.HttpClient,
 	url: str,
-	lang: str,
+	page_source: str,
 	output_dir: str,
 	semester: str
 ) -> list | None:
@@ -15,11 +15,8 @@ def fetch_all_curricula(
 	failure.
 	"""
 	log = logging.getLogger(__name__)
-	log.info(f"fetching list of all curricula from url {url} for language {lang}")
+	log.info(f"fetching list of all curricula from url {url}")
 
-	# fetch the page(source)
-	response = client.fetch(url, lang)
-	page_source = response.text
 	print(page_source)
 
 	# save the page source to the disk under:

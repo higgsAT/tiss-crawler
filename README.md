@@ -67,8 +67,9 @@ output:
   base_dir: output/
 
 crawl:
-  sleep_between_requests: 2          # seconds between requests
-  resume: true                       # pick up from existing state.json if present
+  sleep_between_requests: 2                                            # seconds between requests
+  resume: true                                                         # pick up from existing state.json if present
+  url_bootstrap: https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml # url to bootrap the session from
 
 logging:
   level: INFO
@@ -106,7 +107,7 @@ Crawl state is persisted in `output/state.json` after each fetch. On restart, th
 ---
 
 ## Rate limiting
-Requests are throttled with a configurable sleep between fetches to avoid hitting TISS rate limits. No authentication is required — all course and curricula data is publicly accessible.
+Requests are throttled with a configurable sleep between fetches to avoid hitting TISS rate limits. No authentication is required — all course and curricula data is publicly accessible. To ensure proper page loading a headless browser is used to bootstrap the session.
 
 ---
 
@@ -121,6 +122,7 @@ This crawler does not write to a database directly. After crawling, a separate e
 - `BeautifulSoup` — HTML parsing
 - `json` — state and data storage
 - `logging` — structured logs
+- `Playwright` — bootstrapping the session
 
 ---
 
