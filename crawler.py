@@ -10,27 +10,22 @@ from src import logger
 from src import state
 from src import storage
 from src.phases import curricula
+from src.phases import courses_discovery
 
-def load_config(config_file: str) -> dict:
-	"""
-	Load the config file into a dict (which is then returned)
-	"""
+def _load_config(config_file: str) -> dict:
 	with open(config_file) as f:
 		loaded_config_file = yaml.safe_load(f)
 	return loaded_config_file
 
-def parse_args():
-	"""
-	Parse the command line arguments using argparse and return the generated <class 'argparse.Namespace'> object
-	"""
+def _parse_arguments() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description="TISS Crawler")
 	parser.add_argument("--semester", type=str, help="Semester to crawl, e.g. 2025W")
 	parser.add_argument("--resume", action="store_true", help="Resume from existing state.json")
 	return parser.parse_args()
 
 if __name__ == "__main__":
-	args = parse_args()                                 # parse CLI arguments
-	config = load_config("config.yaml")                 # load config file
+	args = _parse_arguments()                           # parse CLI arguments
+	config = _load_config("config.yaml")                # load config file
 	semester = args.semester or config["semester"]      # select semester (CLI arguments overrule config file)
 	resume = args.resume or config["crawl"]["resume"]   # select resume (if true, continue where crawler stopped. Same overrule as semester)
 
@@ -58,6 +53,8 @@ if __name__ == "__main__":
 		log.info("starting new crawl -> resetting state.json")
 		state.clear_state(semester, f"{output_basedir}state.json")
 
+	# state.clear_state(semester, f"{output_basedir}state.json")	# TEST: reset state
+
 	saved_state = state.load_state(f"{output_basedir}state.json") # load a state from the disk into a variable
 	log.info(f"Amount of curricula in queue: {len(saved_state['curricula']['queue'])}")
 	log.info(f"Amount of courses in queue: {len(saved_state['courses']['queue'])}")
@@ -70,35 +67,36 @@ if __name__ == "__main__":
 '{semester}' and state.json: '{saved_state['semester']}'")
 
 	# initialise http_client object (manages crawling and respects the crawl delay)
-	url_bootstrap = config["crawl"]["url_bootstrap"]
-	url_bootstrap = "https://higgs.at" # TEST overwrite the bootstrap url for testing purposes TEST
-	client = http_client.HttpClient(config, url_bootstrap)
+	client = http_client.HttpClient(config)
 
-	# determine at which "phase" the program was stopped:
-	# Phase 1: Fetch all curricula
-	# Phase 2: Extract courses per curricula
-	# Phase 3: Crawl each unique course
+	try:
+		# determine at which "phase" the program was stopped:
+		# Phase 1: Fetch all curricula
+		# Phase 2: Extract courses per curricula
+		# Phase 3: Crawl each unique course
 
-	# both queues (study programs and courses) empty -> Phase 1.
-	# This assumes a "start from zero" happens. To bootstrap the session
-	# the client has the page source of the curricula page (see 'url_bootstrap'
-	# in the config) -> use this instead of a refetch of the same page
-	if (not saved_state['curricula']['queue'] and
-		not saved_state['courses']['queue']):
-		extracted_curricula = curricula.fetch_all_curricula(client.bootstrap_page_source, output_basedir, semester)
-		saved_state['curricula']['queue'] = extracted_curricula
-		state.save_state(saved_state, f"{output_basedir}state.json")
+		# both queues (study programs and courses) empty -> Phase 1.
+		# This assumes a "start from zero" happens.
+		if (not saved_state['curricula']['queue'] and
+			not saved_state['courses']['queue']):
+			curricula_page_source = client.fetch(config["crawl"]["url_curricula"], "de")
+			extracted_curricula = curricula.fetch_all_curricula(curricula_page_source, output_basedir, semester)
+			saved_state['curricula']['queue'] = extracted_curricula
+			state.save_state(saved_state, f"{output_basedir}state.json")
 
-	# curricula queue not empty -> proceed in working that off -> Phase 2
-	elif saved_state['curricula']['queue']:
-		print("second phase")
-		# TODO: extract courses from curricula via courses_discovery.py
+		# Phase 2: drain curricula queue
+		while saved_state['curricula']['queue']:
+			# e.g., curricula_details:
+			# ['Weitere Kataloge', 'Professional Skills für Doktorand_innen', '/curriculum/public/curriculum.xhtml?key=74464']
+			curricula_details = saved_state['curricula']['queue'].pop(1)
+			log.info(f"Process curricula: {curricula_details}")
+			courses_discovery.extract_courses(client, config["crawl"]["url_base"], curricula_details, semester, output_basedir)
+			# TODO: update saved state via 'state.save_state(saved_state, f"{output_basedir}state.json")'
 
-	# study program - queue empty but courses not empty -> Phase 3
-	elif saved_state['courses']['queue']:
-		print("third phase")
-		# TODO: process discovered courses via courses_crawl.py
+		# Phase 3: drain courses queue
+		while saved_state['courses']['queue']:
+			print("third phase")
+			# TODO: process discovered courses
 
-	else:
-		log.error(f"Unknown program state: {saved_state['courses']['queue']}, {saved_state['curricula']['queue']}")
-		raise ValueError(f"Unknown program state: {saved_state['courses']['queue']}, {saved_state['curricula']['queue']}")
+	finally:
+		client.close()

@@ -70,6 +70,7 @@ crawl:
   sleep_between_requests: 2                                            # seconds between requests
   resume: true                                                         # pick up from existing state.json if present
   url_bootstrap: https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml # url to bootrap the session from
+  url_base: https://tiss.tuwien.ac.at
 
 logging:
   level: INFO
@@ -83,7 +84,7 @@ logging:
 output/
   state.json                          # crawl state: progress tracking + visited sets
   study_programs/
-    study_programs__<semester>.html
+    study_programs__<semester>.html   # page source pointing to all study programs (overview)
     <program>/
       <program_name>__<semester>.html
   courses/
@@ -118,11 +119,10 @@ This crawler does not write to a database directly. After crawling, a separate e
 
 ## Tech stack
 - Python 3.x
-- `requests` — HTTP
 - `BeautifulSoup` — HTML parsing
 - `json` — state and data storage
 - `logging` — structured logs
-- `Playwright` — bootstrapping the session
+- `Playwright` — page navigation
 
 ---
 

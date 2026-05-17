@@ -1,33 +1,15 @@
 from playwright.sync_api import sync_playwright
-import requests
 import time
 
 import logging
 
 class HttpClient:
-	def __init__(self, config, url_bootstrap) -> None:
+	def __init__(self, config) -> None:
 		self.sleep = config['crawl']['sleep_between_requests']
-		self.last_fetch_time = time.time()
+		self.last_fetch_time = None
 		self.log = logging.getLogger(__name__)
-		self.session = requests.Session()
-
-		# bootstrap session via headless browser
-		self.log.info(f"bootstrapping cookies from url: {url_bootstrap}")
-		cookies, self.bootstrap_page_source = self._get_session_cookies(url_bootstrap)
-		self.log.info(f"bootstrapped cookies: {cookies}")
-		for cookie in cookies:
-			self.session.cookies.set(cookie['name'], cookie['value'])
-
-	def _get_session_cookies(self, url):
-		with sync_playwright() as p:
-			browser = p.chromium.launch(headless=True)
-			page = browser.new_page()
-			page.goto(url)
-			page.wait_for_load_state("networkidle")  # wait for JS redirects to settle
-			source_code = page.content()
-			cookies = page.context.cookies()
-			browser.close()
-			return cookies, source_code
+		self._playwright = sync_playwright().start()
+		self._browser = self._playwright.chromium.launch(headless=False)
 
 	def _wait_if_needed(self) -> None:
 		"""
@@ -42,27 +24,34 @@ class HttpClient:
 			self.log.info(f"waiting {wait:.2f}s before making next request")
 			time.sleep(wait)
 
-	def _do_request(self, url: str, lang: str) -> requests.Response | None:
+	def _do_request(self, url: str, lang: str) -> str | None:
 		"""
 		Perform the request. Return the page source or None if an error occurs
 		"""
 		self.log.info(f"request url: {url} lang: {lang}")
 
 		try:
-			response = self.session.get(url, params={"locale": lang})
-			response.raise_for_status()  # raises for 4xx/5xx
-		except requests.exceptions.RequestException as e:
+			page = self._browser.new_page(viewport={"width": 800, "height": 700})
+			separator = "&" if "?" in url else "?"
+			page.goto(f"{url}{separator}locale={lang}")
+			page.wait_for_load_state("networkidle")
+			source_code = page.content()
+		except Exception as e:
 			self.log.error(f"request failed: {url} — {e}")
 			return None
+		finally:
+			page.close()
 
 		self.last_fetch_time = time.time()
-		return response
+		return source_code
 
-	def fetch(self, url: str, lang: str) -> requests.Response:
+	def fetch(self, url: str, lang: str) -> str:
 		"""
 		Fetch an url while respecting the set time to wait between fetches according to the set config.
 		Returns the page source upon success
 		"""
+		self.log.info(f"fetching page: {url} for language {lang}")
+
 		if lang not in ("de", "en"):
 			raise ValueError(f"ValueError for set language: {lang}")
 
@@ -81,3 +70,7 @@ class HttpClient:
 
 		# all retries failed -> stop program
 		raise RuntimeError(f"Error fetching page. Stopping crawler")
+
+	def close(self) -> None:
+		self._browser.close()
+		self._playwright.stop()
