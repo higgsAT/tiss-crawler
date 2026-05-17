@@ -8,6 +8,7 @@ import yaml
 from src import http_client
 from src import logger
 from src import state
+from src import storage
 from src.phases import curricula
 
 def load_config(config_file: str) -> dict:
@@ -58,8 +59,8 @@ if __name__ == "__main__":
 		state.clear_state(semester, f"{output_basedir}state.json")
 
 	saved_state = state.load_state(f"{output_basedir}state.json") # load a state from the disk into a variable
-
-	state.print_state(saved_state) # TEST print the state for testing purposes (TEST)
+	log.info(f"Amount of curricula in queue: {len(saved_state['curricula']['queue'])}")
+	log.info(f"Amount of courses in queue: {len(saved_state['courses']['queue'])}")
 
 	# check if the given semester to process via CLI / config.yaml matches the saved state in state.json
 	if semester != saved_state['semester']:
@@ -79,10 +80,14 @@ if __name__ == "__main__":
 	# Phase 3: Crawl each unique course
 
 	# both queues (study programs and courses) empty -> Phase 1.
-	# This assumes a "start from zero" happens
+	# This assumes a "start from zero" happens. To bootstrap the session
+	# the client has the page source of the curricula page (see 'url_bootstrap'
+	# in the config) -> use this instead of a refetch of the same page
 	if (not saved_state['curricula']['queue'] and
 		not saved_state['courses']['queue']):
-		curricula.fetch_all_curricula(client, url_bootstrap, client.bootstrap_page_source, output_basedir, semester)
+		extracted_curricula = curricula.fetch_all_curricula(client.bootstrap_page_source, output_basedir, semester)
+		saved_state['curricula']['queue'] = extracted_curricula
+		state.save_state(saved_state, f"{output_basedir}state.json")
 
 	# curricula queue not empty -> proceed in working that off -> Phase 2
 	elif saved_state['curricula']['queue']:
@@ -97,15 +102,3 @@ if __name__ == "__main__":
 	else:
 		log.error(f"Unknown program state: {saved_state['courses']['queue']}, {saved_state['curricula']['queue']}")
 		raise ValueError(f"Unknown program state: {saved_state['courses']['queue']}, {saved_state['curricula']['queue']}")
-
-	sys.exit()
-
-	sys.exit()
-	client.fetch("URL1", "en")
-	client.fetch("URL2", "de")
-	client.fetch("URL3", "en")
-
-	sys.exit()
-
-	# update the state in state.json
-	state.save_state(saved_state, f"{output_basedir}state.json") # save a state to the disk
