@@ -41,9 +41,12 @@ if __name__ == "__main__":
 		log.error(f"unsupported format for semester: {semester}")
 		raise ValueError(f"unsupported format for semester: {semester}")
 
-	# check if the directories exist
+	# check if the directories exist -> if not: create them
 	output_basedir = config["output"]["base_dir"]
 	Path(output_basedir).mkdir(parents=True, exist_ok=True)
+
+	output_datadir = config["output"]["data_dir"]
+	Path(output_datadir).mkdir(parents=True, exist_ok=True)
 
 	# load previous state which is being resumed
 	if resume:
@@ -91,35 +94,40 @@ if __name__ == "__main__":
 		# Phase 2: drain curricula queue
 		while saved_state['curricula']['queue']:
 			key, entry = saved_state['curricula']['queue'].popitem()
+			log.info(f"Process curricula: {entry}")
+			extracted_courses = courses_discovery.extract_courses(client, config["crawl"]["url_base_curricula"],
+				entry, semester, output_basedir)
 
-			print(f"key: {key} | entry: {entry}")
+			# save the extracted curricula -> courses info into a file in /data/study_programs_<semester>.json
+			try:
+				curricula_courses_state = state.load_state(f"{output_datadir}study_programs_{semester}.json")
+			except FileNotFoundError:
+				curricula_courses_state = {}
+			for process_semester in extracted_courses:
+				dict_key = f"{key}__{process_semester}"
+				if dict_key in curricula_courses_state:
+					log.warning(f"key {dict_key} already in dict")
+				curricula_courses_state[dict_key] = {
+					"course_numbers": extracted_courses[process_semester],
+					"semester": semester,
+					"subsemester": process_semester,
+					"subprogram_title_de": entry["de"]["name"],
+					"subprogram_title_en": entry["en"]["name"],
+					"academic_program_de": entry["de"]["faculty"],
+					"academic_program_en": entry["en"]["faculty"],
+					"program_code": entry["study_code"]
+				}
 
-			# process entry
-			# state.save_state(saved_state, f"{output_basedir}state.json")
-
-		sys.exit()
-
-
-		while saved_state['curricula']['queue']:
-			# e.g., curricula_details:
-			# ['Weitere Kataloge', 'Professional Skills für Doktorand_innen', '/curriculum/public/curriculum.xhtml?key=74464']
-			curricula_details = saved_state['curricula']['queue'].pop()
-			log.info(f"Process curricula: {curricula_details}")
-			extracted_courses = courses_discovery.extract_courses(client, config["crawl"]["url_base"],
-				curricula_details, semester, output_basedir)
 			# make sure there are no duplicate entries in the "courses list" in the saved state
-			for course_nr in extracted_courses:
-				for lang in ["de", "en"]:
-					entry = [course_nr, lang]
-					if entry not in saved_state['courses']['queue']:
-						saved_state['courses']['queue'].append(entry)
+			for process_semester in extracted_courses:
+				for course_nr in extracted_courses[process_semester]:
+					for lang in ["de", "en"]:
+						add_entry = [course_nr, lang]
+						if add_entry not in saved_state['courses']['queue']:
+							saved_state['courses']['queue'].append(add_entry)
+
 			state.save_state(saved_state, f"{output_basedir}state.json")
-
-
-
-
-
-
+			state.save_state(curricula_courses_state, f"{output_datadir}study_programs_{semester}.json")
 
 		# Phase 3: drain courses queue
 		while saved_state['courses']['queue']:

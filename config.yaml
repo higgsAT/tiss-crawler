@@ -2,12 +2,13 @@ semester: 2026S
 
 output:
    base_dir: output/
+   data_dir: data/
 
 crawl:
    sleep_between_requests: 30         # seconds between requests
    resume: true                       # pick up from existing state.json if present
    url_curricula: https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml # url containing all curricula
-   url_base: https://tiss.tuwien.ac.at
+   url_base_curricula: https://tiss.tuwien.ac.at/curriculum/public/curriculumSemester.xhtml
 
 logging:
    level: INFO

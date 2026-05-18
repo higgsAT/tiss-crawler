@@ -1,3 +1,4 @@
+from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
 from playwright.sync_api import sync_playwright
 import time
 
@@ -13,7 +14,12 @@ class HttpClient:
 		self._context = self._browser.new_context(viewport={"width": 800, "height": 700})
 		self._keepalive_page = self._context.new_page()
 
-		print("INIT")
+	def _build_url(self, url: str, lang: str) -> str:
+		parsed = urlparse(url)
+		params = parse_qs(parsed.query, keep_blank_values=True)
+		params["locale"] = [lang]
+		new_query = urlencode({k: v[0] for k, v in params.items()})
+		return urlunparse(parsed._replace(query=new_query))
 
 	def _wait_if_needed(self) -> None:
 		"""
@@ -36,8 +42,7 @@ class HttpClient:
 
 		try:
 			page = self._context.new_page()
-			separator = "&" if "?" in url else "?"
-			page.goto(f"{url}{separator}locale={lang}")
+			page.goto(self._build_url(url, lang))
 			page.wait_for_load_state("networkidle")
 			source_code = page.content()
 		except Exception as e:
@@ -76,7 +81,6 @@ class HttpClient:
 		raise RuntimeError(f"Error fetching page. Stopping crawler")
 
 	def close(self) -> None:
-		print("CLOSE")
 		self._keepalive_page.close()
 		self._context.close()
 		self._browser.close()

@@ -1,5 +1,5 @@
-from urllib.parse import urljoin
 import sys
+from urllib.parse import urlparse, parse_qs
 
 import logging
 from src import http_client
@@ -9,43 +9,55 @@ from src import storage
 
 def extract_courses(
 	client: http_client.HttpClient,
-	url_base: str,
-	curricula_details: list,
+	url_curricula_endpoint: str,
+	curricula_details: dict,
 	semester: str,
 	output_dir: str
-) -> list:
+) -> dict:
 	"""
 	Takes the curricula details as an argument, extracts all corresponding
 	courses and returns the extracted information
 
 	Example of curricula_details:
-	['Weitere Kataloge', 'Professional Skills für Doktorand_innen', '/curriculum/public/curriculum.xhtml?key=74464']
+	{
+		'url': '/curriculum/public/curriculum.xhtml?key=37047',
+		'study_code': '033 243',													<-	may be empty
+		'de':
+		{
+			'name': 'Bachelorstudium Architektur',
+			'faculty': 'Architektur'
+		},
+		'en':
+		{
+			'name': 'Bachelor programme Architecture',
+			'faculty': 'Architecture'
+		}
+	}
 	"""
-	# fetch the curricula page (language does not matter here)
-	url_full = urljoin(url_base, curricula_details[2])
-	page_source = client.fetch(url_full, "de")
+	# for extraction of just the courses the set language does not matter
+	set_language = "en"
+
+	# build the url -> fetch page for the curricula
+	curricula_key = parse_qs(urlparse(curricula_details["url"]).query).get("key", [None])[0]
+
+	# some possible url parameters for curricula:
+	# le               ... late enroller (true / false)
+	# semesterCode     ... semester, e.g., "2026S"
+	# viewAcademicYear ... Semester/Structure-view (former lists courses by semester) -> parameter: true
+	# locale           ... language ("de" / "en")
+	url_full = f"{url_curricula_endpoint}?le=false&semesterCode={semester}&key={curricula_key}"
+	page_source = client.fetch(url_full, set_language)
 
 	# save the page source to the disk under:
 	# output/
 	#   study_programs/
-	#      <program>/                            <-	curricula_details[0]
-	#         <study_programs>__<semester>.html  <-	curricula_details[1] + semester
-	curricula_source_write = f"{output_dir}study_programs/{curricula_details[0]}/"
-	filename = f"{curricula_details[1]}__{semester}.html"
+	#      <program>/                            <-	curricula_details[set_language]["faculty"]
+	#         <study_programs>__<semester>.html  <-	curricula_details[set_language]["name"] + semester
+	faculty = curricula_details[set_language]["faculty"]
+	name = curricula_details[set_language]["name"]
+	curricula_source_write = f"{output_dir}study_programs/{faculty}/"
+	filename = f"{name}__{semester}.html"
 	storage.write_to_disk(page_source, curricula_source_write, filename)
 
 	# extract all courses corresponding to the curricula
-	extracted_courses = parser.extract_courses(page_source, semester)
-
-	"""
-	# write the "curricula -> courses"-information to a file on the disk (see README.MD for more info)
-	# output/
-	#   data/
-	#     study_programs_<semester>.json    # all courses belonging to a certain study program
-	try:
-		curricula_courses_path = f"{output_dir}data/study_programs_{semester}.json"
-		curricula_courses_state = state.load_state(curricula_courses_path)
-	except FileNotFoundError:
-	"""
-
-	return extracted_courses
+	return parser.extract_courses(page_source, semester)

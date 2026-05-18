@@ -61,11 +61,11 @@ def merge_curricula(de: dict, en: dict) -> dict:
 		}
 	return merged
 
-def extract_courses(page_source: str, semester: str) -> list:
+def extract_courses(page_source: str, semester: str) -> dict:
 	"""
 	Process the page source containing all possible courses for a curricula
 	using BeautifulSoup. Extract the desired information (course numbers) and
-	return it as a list.
+	return it as a dict.
 
 	Make sure the selected semester (from the page source) is the same as
 	given as an argument. This value is stored in a dropdown!
@@ -87,26 +87,37 @@ def extract_courses(page_source: str, semester: str) -> list:
 	if semester_source != semester:
 		raise RuntimeError(f"Mismatching semesters -> check source vs. config")
 
-
-
-
-
-	results = []
+	results = {}
 	for h2 in soup.find_all("h2"):
-		semester = h2.get_text(strip=True)
-		print(semester)
-		table = h2.find_next_sibling("table")
-		if table:
-			for a in table.find_all("a"):
-				name = a.get_text(strip=True)
-				url = a["href"]
-				results.append((faculty, name, url))
+		courses_semester = h2.get_text(strip=True)
+		results[courses_semester] = []
+		sibling = h2.find_next_sibling()
+		if sibling:
+			table = sibling if sibling.name == "table" else sibling.find("table")
+			if not table:
+				continue
+			for row in table.find_all("tr"):
+				course_info = row.find("div", {"class": "courseKey"})
+				if not course_info:
+					continue
+				course_info_split = course_info.text.strip().split(" ") # course_info_split = ['352.490', 'VU', '2025W']
+				if len(course_info_split) != 3:
+					log.error(f"Error extracting courses (split: {course_info_split})")
+					continue
+				# courses can be +/-1 for the set semester -> only select semesters for the desired (argument)
+				# For example the curricula for 2026S has courses for 2025W (overlap, double courses, ...)
+				if course_info_split[2] != semester:
+					continue
+				results[courses_semester].append(f"{course_info_split[0]}")
 
+	# remove empty keys
+	keys = list(results.keys())
+	for key in keys:
+		if not results[key]:
+			results.pop(key)
 
-	sys.exit()
-
-
-	log.info(f"Extracted {len(results)} courses for semester {semester}")
+	total = sum(len(v) for v in results.values())
+	log.info(f"Extracted {total} courses for semester {semester}")
 	if not results:
 		log.warning("No courses found for this semester — curricula may be empty for this term")
 
