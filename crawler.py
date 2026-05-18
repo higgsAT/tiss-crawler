@@ -31,7 +31,6 @@ if __name__ == "__main__":
 
 	logger.setup_logger(config["logging"]["level"], config["logging"]["file"])  # set up logging
 	log = logging.getLogger(__name__)
-
 	log.info(f"Starting crawler")
 	log.info(f"select semester: {semester}")
 	log.info(f"select resume: {resume}")
@@ -88,10 +87,17 @@ if __name__ == "__main__":
 		while saved_state['curricula']['queue']:
 			# e.g., curricula_details:
 			# ['Weitere Kataloge', 'Professional Skills für Doktorand_innen', '/curriculum/public/curriculum.xhtml?key=74464']
-			curricula_details = saved_state['curricula']['queue'].pop(1)
+			curricula_details = saved_state['curricula']['queue'].pop()
 			log.info(f"Process curricula: {curricula_details}")
-			courses_discovery.extract_courses(client, config["crawl"]["url_base"], curricula_details, semester, output_basedir)
-			# TODO: update saved state via 'state.save_state(saved_state, f"{output_basedir}state.json")'
+			extracted_courses = courses_discovery.extract_courses(client, config["crawl"]["url_base"],
+				curricula_details, semester, output_basedir)
+			# make sure there are no duplicate entries in the "courses list" in the saved state
+			for course_nr in extracted_courses:
+				for lang in ["de", "en"]:
+					entry = [course_nr, lang]
+					if entry not in saved_state['courses']['queue']:
+						saved_state['courses']['queue'].append(entry)
+			state.save_state(saved_state, f"{output_basedir}state.json")
 
 		# Phase 3: drain courses queue
 		while saved_state['courses']['queue']:

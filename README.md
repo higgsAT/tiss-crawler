@@ -6,7 +6,6 @@ Python crawler for extracting course data from [TISS](https://tiss.tuwien.ac.at)
 
 This is a rewrite of [v1](https://github.com/higgsAT/tiss-crawler/commit/9da4719d75af75d24d8b611bc07a2e7bdc53e27a). Compared to v1, this version:
 - has no direct database connectivity (data is exported separately after crawling)
-- drops Selenium in favour of `requests` + `BeautifulSoup` (TISS uses server-side rendering via JSF, so no JS execution is required)
 - is smaller in scope and easier to maintain
 
 ---
