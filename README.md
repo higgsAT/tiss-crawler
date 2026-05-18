@@ -14,7 +14,7 @@ This is a rewrite of [v1](https://github.com/higgsAT/tiss-crawler/commit/9da4719
 The crawler operates in three distinct, resumable phases:
 
 **Phase 1: Fetch all curricula**
-A single TISS page lists all curricula. The crawler fetches this page and extracts ~50 curricula URLs.
+A single TISS page lists all curricula. The crawler fetches this page and extracts information concerning ~170 curricula (curricula url, curricula name (de/en), curricula number, etc.
 
 **Phase 2: Extract courses per curricula**
 Each curricula page is fetched and all corresponding courses (Lehrveranstaltungen) are extracted, including the mapping of which course belongs to which curricula. This mapping is retained for later use.
@@ -81,18 +81,19 @@ logging:
 ## Output structure
 ```
 output/
-  state.json                          # crawl state: progress tracking + visited sets
+  state.json                              # crawl state: progress tracking + visited sets
   study_programs/
-    study_programs__<semester>.html   # page source pointing to all study programs (overview)
-    <program>/
-      <program_name>__<semester>.html
+    study_programs__de__<semester>.html   # page source pointing to all study programs (overview) -> language: de
+    study_programs__en__<semester>.html   # page source pointing to all study programs (overview) -> language: en
+    <program>/                            # program name as folder (one language for consistency)
+      <program_name>__<semester>.html     # page source of the study program (single language since only courses are extracted from it)
   courses/
     <semester>/
       <course_number>__DE__<date>.html
       <course_number>__EN__<date>.html
   data/
-    courses_<semester>.json           # extracted data according to "Extracted course data" above
-    study_programs_<semester>.json    # all courses belonging to a certain study program
+    courses_<semester>.json               # extracted data according to "Extracted course data" above
+    study_programs_<semester>.json        # all courses belonging to a certain study program (and semester)
   logs/
     crawler.log
 ```
