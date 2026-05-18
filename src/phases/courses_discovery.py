@@ -4,6 +4,7 @@ import sys
 import logging
 from src import http_client
 from src import parser
+from src import state
 from src import storage
 
 def extract_courses(
@@ -34,4 +35,17 @@ def extract_courses(
 	storage.write_to_disk(page_source, curricula_source_write, filename)
 
 	# extract all courses corresponding to the curricula
-	return parser.extract_courses(page_source, semester)
+	extracted_courses = parser.extract_courses(page_source, semester)
+
+	"""
+	# write the "curricula -> courses"-information to a file on the disk (see README.MD for more info)
+	# output/
+	#   data/
+	#     study_programs_<semester>.json    # all courses belonging to a certain study program
+	try:
+		curricula_courses_path = f"{output_dir}data/study_programs_{semester}.json"
+		curricula_courses_state = state.load_state(curricula_courses_path)
+	except FileNotFoundError:
+	"""
+
+	return extracted_courses

@@ -10,6 +10,10 @@ class HttpClient:
 		self.log = logging.getLogger(__name__)
 		self._playwright = sync_playwright().start()
 		self._browser = self._playwright.chromium.launch(headless=False)
+		self._context = self._browser.new_context(viewport={"width": 800, "height": 700})
+		self._keepalive_page = self._context.new_page()
+
+		print("INIT")
 
 	def _wait_if_needed(self) -> None:
 		"""
@@ -31,7 +35,7 @@ class HttpClient:
 		self.log.info(f"request url: {url} lang: {lang}")
 
 		try:
-			page = self._browser.new_page(viewport={"width": 800, "height": 700})
+			page = self._context.new_page()
 			separator = "&" if "?" in url else "?"
 			page.goto(f"{url}{separator}locale={lang}")
 			page.wait_for_load_state("networkidle")
@@ -72,5 +76,8 @@ class HttpClient:
 		raise RuntimeError(f"Error fetching page. Stopping crawler")
 
 	def close(self) -> None:
+		print("CLOSE")
+		self._keepalive_page.close()
+		self._context.close()
 		self._browser.close()
 		self._playwright.stop()

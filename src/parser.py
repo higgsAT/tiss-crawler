@@ -1,31 +1,65 @@
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse, parse_qs
 import re
 import sys
 
 import logging
 
-def extract_curricula(page_source: str) -> list | None:
+def extract_curricula(page_source: str, lang: str) -> dict:
 	"""
 	Process the page source containing all available curricula using BeautifulSoup.
-	Extract the desired information (faculty, curricula_name, curricula_url) and
-	return it as a list.
+	Extract the desired information (faculty, study_code, curricula_name, curricula_url, lang) and
+	return it as a dict.
 	"""
 	soup = BeautifulSoup(page_source, 'html.parser')
 
-	results = []
+	results = {}
 	for h2 in soup.find_all("h2"):
 		faculty = h2.get_text(strip=True)
 		table = h2.find_next_sibling("table")
 		if table:
-			for a in table.find_all("a"):
-				name = a.get_text(strip=True)
-				url = a["href"]
-				results.append((faculty, name, url))
+			for element in table.find_all("tr"):
+				# may be empty, for example, for "elective courses" or "transferable skills"
+				study_code = element.find("td", {"class": "studyCodeColumn"})
+				if study_code:
+					study_code = study_code.text.strip()
+				else:
+					study_code = ""
+				study_name_url = element.find("td", {"class": "studyCodeNameColumn"})
+				if study_name_url:
+					a_tag = study_name_url.find("a")
+					if not a_tag:
+						continue
+					curricula_name = a_tag.get_text(strip=True)
+					curricula_url = a_tag["href"]
+					key = parse_qs(urlparse(curricula_url).query).get("key", [None])[0]
+					if not key:
+						continue
+				else:
+					continue
+				results[key] = (faculty, study_code, curricula_name, curricula_url, lang)
 
-	if len(results) < 10:
+	if not results:
 		raise RuntimeError("Error extracting curricula")
 
 	return results
+
+def merge_curricula(de: dict, en: dict) -> dict:
+	log = logging.getLogger(__name__)
+	merged = {}
+	for key, (faculty_de, study_code, name_de, url, _) in de.items():
+		en_entry = en.get(key)
+		if not en_entry:
+			log.error(f"Extracting curriculas: Mismatch entries de/en for key: {key}")
+			continue
+		faculty_en, _, name_en, _, _ = en_entry
+		merged[key] = {
+			"url": url,
+			"study_code": study_code,
+			"de": {"name": name_de, "faculty": faculty_de},
+			"en": {"name": name_en, "faculty": faculty_en}
+		}
+	return merged
 
 def extract_courses(page_source: str, semester: str) -> list:
 	"""
@@ -53,15 +87,24 @@ def extract_courses(page_source: str, semester: str) -> list:
 	if semester_source != semester:
 		raise RuntimeError(f"Mismatching semesters -> check source vs. config")
 
+
+
+
+
 	results = []
-	for course_div in soup.find_all("div", {"class": "courseKey"}):
-		parts = course_div.text.strip().split()
-		# expected: ['253.G74', 'VO', '2025W']
-		if len(parts) != 3:
-			raise RuntimeError(f"Unexpected courseKey format: {course_div.text.strip()!r}")
-		course_nr, _type, course_semester = parts
-		if course_semester == semester:
-			results.append(course_nr)
+	for h2 in soup.find_all("h2"):
+		semester = h2.get_text(strip=True)
+		print(semester)
+		table = h2.find_next_sibling("table")
+		if table:
+			for a in table.find_all("a"):
+				name = a.get_text(strip=True)
+				url = a["href"]
+				results.append((faculty, name, url))
+
+
+	sys.exit()
+
 
 	log.info(f"Extracted {len(results)} courses for semester {semester}")
 	if not results:

@@ -7,6 +7,7 @@ import yaml
 
 from src import http_client
 from src import logger
+from src import parser
 from src import state
 from src import storage
 from src.phases import curricula
@@ -78,12 +79,27 @@ if __name__ == "__main__":
 		# This assumes a "start from zero" happens.
 		if (not saved_state['curricula']['queue'] and
 			not saved_state['courses']['queue']):
-			curricula_page_source = client.fetch(config["crawl"]["url_curricula"], "de")
-			extracted_curricula = curricula.fetch_all_curricula(curricula_page_source, output_basedir, semester)
-			saved_state['curricula']['queue'] = extracted_curricula
+			# both languages needed here
+			curricula_page_source_de = client.fetch(config["crawl"]["url_curricula"], "de")
+			extracted_curricula_de = curricula.fetch_all_curricula(curricula_page_source_de, output_basedir, semester, "de")
+			curricula_page_source_en = client.fetch(config["crawl"]["url_curricula"], "en")
+			extracted_curricula_en = curricula.fetch_all_curricula(curricula_page_source_en, output_basedir, semester, "en")
+			curricula_extract = parser.merge_curricula(extracted_curricula_de, extracted_curricula_en)
+			saved_state['curricula']['queue'] = curricula_extract
 			state.save_state(saved_state, f"{output_basedir}state.json")
 
 		# Phase 2: drain curricula queue
+		while saved_state['curricula']['queue']:
+			key, entry = saved_state['curricula']['queue'].popitem()
+
+			print(f"key: {key} | entry: {entry}")
+
+			# process entry
+			# state.save_state(saved_state, f"{output_basedir}state.json")
+
+		sys.exit()
+
+
 		while saved_state['curricula']['queue']:
 			# e.g., curricula_details:
 			# ['Weitere Kataloge', 'Professional Skills für Doktorand_innen', '/curriculum/public/curriculum.xhtml?key=74464']
@@ -98,6 +114,12 @@ if __name__ == "__main__":
 					if entry not in saved_state['courses']['queue']:
 						saved_state['courses']['queue'].append(entry)
 			state.save_state(saved_state, f"{output_basedir}state.json")
+
+
+
+
+
+
 
 		# Phase 3: drain courses queue
 		while saved_state['courses']['queue']:
