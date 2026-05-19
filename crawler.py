@@ -12,6 +12,7 @@ from src import state
 from src import storage
 from src.phases import curricula
 from src.phases import courses_discovery
+from src.phases import courses_crawl
 
 def _load_config(config_file: str) -> dict:
 	with open(config_file) as f:
@@ -47,6 +48,9 @@ if __name__ == "__main__":
 
 	output_datadir = config["output"]["data_dir"]
 	Path(output_datadir).mkdir(parents=True, exist_ok=True)
+
+	output_coursesdir = config["output"]["courses_dir"]
+	Path(output_coursesdir).mkdir(parents=True, exist_ok=True)
 
 	# load previous state which is being resumed
 	if resume:
@@ -106,7 +110,7 @@ if __name__ == "__main__":
 			for process_semester in extracted_courses:
 				dict_key = f"{key}__{process_semester}"
 				if dict_key in curricula_courses_state:
-					log.warning(f"key {dict_key} already in dict")
+					log.warning(f"key '{dict_key}' already in dict")
 				curricula_courses_state[dict_key] = {
 					"course_numbers": extracted_courses[process_semester],
 					"semester": semester,
@@ -131,8 +135,13 @@ if __name__ == "__main__":
 
 		# Phase 3: drain courses queue
 		while saved_state['courses']['queue']:
-			print("third phase")
-			# TODO: process discovered courses
+			course_number, course_lang = saved_state['courses']['queue'].pop()
+			course_data = courses_crawl.process_course(client, output_coursesdir, config["crawl"]["url_course"],
+				semester, course_number, course_lang)
+
+			print(f"Extracted course data: {course_data}")
+
+			sys.exit()
 
 	finally:
 		client.close()
