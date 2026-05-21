@@ -92,7 +92,8 @@ output/
       <course_number>__DE__<date>.html
       <course_number>__EN__<date>.html
   data/
-    courses_<semester>.json               # extracted data according to "Extracted course data" above
+    courses_<semester>.json               # extracted data according to "Extracted course data" above using a dict (indices: course number ->
+                                            language -> extracted data from webpage)
     study_programs_<semester>.json        # all courses belonging to a certain study program (and semester)
   logs/
     crawler.log

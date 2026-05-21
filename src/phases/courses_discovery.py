@@ -34,7 +34,7 @@ def extract_courses(
 		}
 	}
 	"""
-	# for extraction of just the courses the set language does not matter
+	# for extraction of just the courses the set language does not matter (use one arbitrarily)
 	set_language = "en"
 
 	# build the url -> fetch page for the curricula

@@ -139,9 +139,15 @@ if __name__ == "__main__":
 			course_data = courses_crawl.process_course(client, output_coursesdir, config["crawl"]["url_course"],
 				semester, course_number, course_lang)
 
-			print(f"Extracted course data: {course_data}")
-
-			sys.exit()
+			# save the extracted curricula -> courses info into a file in /data/courses_<semester>.json
+			courses_state_name = f"{output_datadir}courses_{semester}.json"
+			try:
+				courses_extract_state = state.load_state(courses_state_name)
+			except FileNotFoundError:
+				courses_extract_state = {}
+			courses_extract_state.setdefault(course_number, {}).setdefault(course_lang, {})
+			courses_extract_state[course_number][course_lang] = course_data
+			state.save_state(courses_extract_state, courses_state_name)
 
 	finally:
 		client.close()
