@@ -1,8 +1,6 @@
 import argparse
 import logging
 from pathlib import Path
-import sys
-import time
 import yaml
 
 from src import http_client

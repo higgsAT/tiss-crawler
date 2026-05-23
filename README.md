@@ -64,12 +64,15 @@ semester: 2025W
 
 output:
   base_dir: output/
+  data_dir: data/
+  courses_dir: courses/
 
 crawl:
   sleep_between_requests: 2                                            # seconds between requests
   resume: true                                                         # pick up from existing state.json if present
-  url_bootstrap: https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml # url to bootrap the session from
-  url_base: https://tiss.tuwien.ac.at
+  url_curricula: https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml # url containing all curricula
+  url_base_curricula: https://tiss.tuwien.ac.at/curriculum/public/curriculumSemester.xhtml
+  url_course: https://tiss.tuwien.ac.at/course/courseDetails.xhtml
 
 logging:
   level: INFO
