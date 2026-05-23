@@ -12,7 +12,7 @@ def process_course(
 	semester: str,
 	course_number: str,
 	course_lang: str
-) -> None:
+) -> dict:
 	log = logging.getLogger(__name__)
 
 	# generate the url with following format:

@@ -10,9 +10,9 @@ class HttpClient:
 		self.last_fetch_time = None
 		self.log = logging.getLogger(__name__)
 		self._playwright = sync_playwright().start()
-		self._browser = self._playwright.chromium.launch(headless=False)
+		self._browser = self._playwright.chromium.launch(headless=True)
 		self._context = self._browser.new_context(viewport={"width": 800, "height": 700})
-		self._keepalive_page = self._context.new_page()
+		self._page = self._context.new_page()
 
 	def _build_url(self, url: str, lang: str) -> str:
 		parsed = urlparse(url)
@@ -36,23 +36,21 @@ class HttpClient:
 
 	def _do_request(self, url: str, lang: str) -> str | None:
 		"""
-		Perform the request. Return the page source or None if an error occurs
+		Handle the request and log errors in case they arise.
 		"""
-		self.log.info(f"request url: {url} lang: {lang}")
-
 		try:
-			page = self._context.new_page()
-			page.goto(self._build_url(url, lang))
-			page.wait_for_load_state("networkidle")
-			source_code = page.content()
+			self._page.goto(self._build_url(url, lang))
+			self._page.wait_for_load_state("networkidle")
+			return self._page.content()
 		except Exception as e:
 			self.log.error(f"request failed: {url} — {e}")
+			try:
+				self.log.error(f"page source at failure:\n{self._page.content()}")
+			except Exception:
+				self.log.error("could not retrieve page source at failure")
 			return None
 		finally:
-			page.close()
-
-		self.last_fetch_time = time.time()
-		return source_code
+			self.last_fetch_time = time.time()
 
 	def fetch(self, url: str, lang: str) -> str:
 		"""
@@ -81,7 +79,6 @@ class HttpClient:
 		raise RuntimeError(f"Error fetching page. Stopping crawler")
 
 	def close(self) -> None:
-		self._keepalive_page.close()
 		self._context.close()
 		self._browser.close()
 		self._playwright.stop()

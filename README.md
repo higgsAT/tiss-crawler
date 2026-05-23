@@ -125,6 +125,8 @@ This crawler does not write to a database directly. After crawling, a separate e
 - `logging` — structured logs
 - `Playwright` — page navigation
 
+use *playwright install chromium* after *pip install -r requirements.txt*.
+
 ---
 
 ## Usage

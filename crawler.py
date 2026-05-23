@@ -46,10 +46,10 @@ if __name__ == "__main__":
 	output_basedir = config["output"]["base_dir"]
 	Path(output_basedir).mkdir(parents=True, exist_ok=True)
 
-	output_datadir = config["output"]["data_dir"]
+	output_datadir = output_basedir + config["output"]["data_dir"]
 	Path(output_datadir).mkdir(parents=True, exist_ok=True)
 
-	output_coursesdir = config["output"]["courses_dir"]
+	output_coursesdir = output_basedir + config["output"]["courses_dir"]
 	Path(output_coursesdir).mkdir(parents=True, exist_ok=True)
 
 	# load previous state which is being resumed
@@ -59,8 +59,6 @@ if __name__ == "__main__":
 	else:
 		log.info("starting new crawl -> resetting state.json")
 		state.clear_state(semester, f"{output_basedir}state.json")
-
-	# state.clear_state(semester, f"{output_basedir}state.json")	# TEST: reset state
 
 	saved_state = state.load_state(f"{output_basedir}state.json") # load a state from the disk into a variable
 	log.info(f"Amount of curricula in queue: {len(saved_state['curricula']['queue'])}")
