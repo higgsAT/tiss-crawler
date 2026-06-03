@@ -39,8 +39,8 @@ class HttpClient:
 		Handle the request and log errors in case they arise.
 		"""
 		try:
-			self._page.goto(self._build_url(url, lang))
-			self._page.wait_for_load_state("load")
+			self._page.goto(self._build_url(url, lang), wait_until="domcontentloaded", timeout=30000)
+			self._page.wait_for_timeout(2000)
 			return self._page.content()
 		except Exception as e:
 			self.log.error(f"request failed: {url} — {e}")
@@ -65,7 +65,7 @@ class HttpClient:
 		self._wait_if_needed()
 
 		sleep_time = 120
-		amt_retries = 3
+		amt_retries = 2
 		for _ in range(0, amt_retries):
 			response = self._do_request(url, lang)
 			if response:
