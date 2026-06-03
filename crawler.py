@@ -64,10 +64,10 @@ if __name__ == "__main__":
 
 	# check if the given semester to process via CLI / config.yaml matches the saved state in state.json
 	if semester != saved_state['semester']:
-		log.error(f"Mismatch between semester in config.yaml/CLI parameter:\
-'{semester}' and state.json: '{saved_state['semester']}'")
-		raise ValueError(f"Mismatch between semester in config.yaml/CLI parameter:\
-'{semester}' and state.json: '{saved_state['semester']}'")
+		log.error(f"Mismatch between semester in config.yaml/CLI parameter:"
+			f"'{semester}' and state.json: '{saved_state['semester']}'")
+		raise ValueError(f"Mismatch between semester in config.yaml/CLI parameter:"
+			f"'{semester}' and state.json: '{saved_state['semester']}'")
 
 	# initialise http_client object (manages crawling and respects the crawl delay)
 	client = http_client.HttpClient(config)

@@ -80,12 +80,12 @@ def _fetch_semester_verify(soup_element, id_selector: str, semester: str) -> Non
 	"""
 	semester_select_obj = soup_element.find_all("select", {"id" : re.compile(id_selector)})
 	if len(semester_select_obj) != 1:
-		raise RuntimeError(f"Unable to find semester <select> / too \
-many elements found: {semester_select_obj}")
+		raise RuntimeError(f"Unable to find semester <select> / too "
+			f"many elements found: {semester_select_obj}")
 	semester_source = semester_select_obj[0].find("option", {"selected": "selected"}).text.strip()
 	if semester_source != semester:
-		raise RuntimeError(f"Mismatching semesters -> \
-check source vs. config: {semester_source} <-> {semester}")
+		raise RuntimeError(f"Mismatching semesters -> "
+			f"check source vs. config: {semester_source} <-> {semester}")
 
 def extract_courses(page_source: str, semester: str) -> dict:
 	"""
