@@ -6,7 +6,7 @@ output:
    courses_dir: courses/
 
 crawl:
-   sleep_between_requests: 30         # seconds between requests
+   sleep_between_requests: 60         # seconds between requests
    resume: true                       # pick up from existing state.json if present
    url_curricula: https://tiss.tuwien.ac.at/curriculum/studyCodes.xhtml # url containing all curricula
    url_base_curricula: https://tiss.tuwien.ac.at/curriculum/public/curriculumSemester.xhtml

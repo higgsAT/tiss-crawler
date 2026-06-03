@@ -19,8 +19,10 @@ def _load_config(config_file: str) -> dict:
 
 def _parse_arguments() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description="TISS Crawler")
-	parser.add_argument("--semester", type=str, help="Semester to crawl, e.g. 2025W")
-	parser.add_argument("--resume", action="store_true", help="Resume from existing state.json")
+	parser.add_argument("--semester", type=str,
+		help="Semester to crawl, e.g. 2025W")
+	parser.add_argument("--resume", action="store_true",
+		help="Resume from existing state.json")
 	return parser.parse_args()
 
 if __name__ == "__main__":
@@ -51,11 +53,13 @@ if __name__ == "__main__":
 	Path(output_coursesdir).mkdir(parents=True, exist_ok=True)
 
 	# load previous state which is being resumed
-	if resume:
+	file_exists = Path(f"{output_basedir}state.json").exists()
+	if resume and file_exists:
 		log.info("resuming with previous crawl")
 	# start new: clear everything
 	else:
-		log.info("starting new crawl -> resetting state.json")
+		log.info(f"starting new crawl: resume/state.json exists: "
+			f"{resume}/{file_exists}-> resetting state.json")
 		state.clear_state(semester, f"{output_basedir}state.json")
 
 	saved_state = state.load_state(f"{output_basedir}state.json") # load a state from the disk into a variable
@@ -84,9 +88,11 @@ if __name__ == "__main__":
 			not saved_state['courses']['queue']):
 			# both languages needed here
 			curricula_page_source_de = client.fetch(config["crawl"]["url_curricula"], "de")
-			extracted_curricula_de = curricula.fetch_all_curricula(curricula_page_source_de, output_basedir, semester, "de")
+			extracted_curricula_de = curricula.fetch_all_curricula(
+				curricula_page_source_de, output_basedir, semester, "de")
 			curricula_page_source_en = client.fetch(config["crawl"]["url_curricula"], "en")
-			extracted_curricula_en = curricula.fetch_all_curricula(curricula_page_source_en, output_basedir, semester, "en")
+			extracted_curricula_en = curricula.fetch_all_curricula(
+				curricula_page_source_en, output_basedir, semester, "en")
 			curricula_extract = parser.merge_curricula(extracted_curricula_de, extracted_curricula_en)
 			saved_state['curricula']['queue'] = curricula_extract
 			state.save_state(saved_state, f"{output_basedir}state.json")
@@ -95,12 +101,14 @@ if __name__ == "__main__":
 		while saved_state['curricula']['queue']:
 			key, entry = saved_state['curricula']['queue'].popitem()
 			log.info(f"Process curricula: {entry}")
-			extracted_courses = courses_discovery.extract_courses(client, config["crawl"]["url_base_curricula"],
+			extracted_courses = courses_discovery.extract_courses(
+				client, config["crawl"]["url_base_curricula"],
 				entry, semester, output_basedir)
 
 			# save the extracted curricula -> courses info into a file in /data/study_programs_<semester>.json
 			try:
-				curricula_courses_state = state.load_state(f"{output_datadir}study_programs_{semester}.json")
+				curricula_courses_state = state.load_state(
+					f"{output_datadir}study_programs_{semester}.json")
 			except FileNotFoundError:
 				curricula_courses_state = {}
 			for process_semester in extracted_courses:
@@ -127,13 +135,27 @@ if __name__ == "__main__":
 							saved_state['courses']['queue'].append(add_entry)
 
 			state.save_state(saved_state, f"{output_basedir}state.json")
-			state.save_state(curricula_courses_state, f"{output_datadir}study_programs_{semester}.json")
+			state.save_state(curricula_courses_state,
+				f"{output_datadir}study_programs_{semester}.json")
 
 		# Phase 3: drain courses queue
+		saved_state['courses'].setdefault('skipped', [])
 		while saved_state['courses']['queue']:
+			# get element to process from list
 			course_number, course_lang = saved_state['courses']['queue'].pop()
-			course_data = courses_crawl.process_course(client, output_coursesdir, config["crawl"]["url_course"],
+			state.save_state(saved_state, f"{output_basedir}state.json")
+
+			# fetch the page
+			course_data = courses_crawl.process_course(
+				client, output_coursesdir, config["crawl"]["url_course"],
 				semester, course_number, course_lang)
+
+			# error during fetching of page
+			if not course_data:
+				skip_entry = [course_number, course_lang]
+				saved_state['courses']['skipped'].append(skip_entry)
+				state.save_state(saved_state, f"{output_basedir}state.json")
+				continue
 
 			# save the extracted curricula -> courses info into a file in /data/courses_<semester>.json
 			courses_state_name = f"{output_datadir}courses_{semester}.json"
@@ -141,6 +163,7 @@ if __name__ == "__main__":
 				courses_extract_state = state.load_state(courses_state_name)
 			except FileNotFoundError:
 				courses_extract_state = {}
+
 			courses_extract_state.setdefault(course_number, {}).setdefault(course_lang, {})
 			courses_extract_state[course_number][course_lang] = course_data
 			state.save_state(courses_extract_state, courses_state_name)

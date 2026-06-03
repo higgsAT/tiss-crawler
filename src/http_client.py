@@ -40,7 +40,7 @@ class HttpClient:
 		"""
 		try:
 			self._page.goto(self._build_url(url, lang))
-			self._page.wait_for_load_state("networkidle")
+			self._page.wait_for_load_state("load")
 			return self._page.content()
 		except Exception as e:
 			self.log.error(f"request failed: {url} — {e}")

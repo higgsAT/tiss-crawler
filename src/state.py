@@ -51,7 +51,7 @@ def clear_state(semester: str, path: str) -> None:
 	save_state({
 		"semester": semester,
 		"curricula": {"queue": []},
-		"courses": {"queue": []}
+		"courses": {"queue": [], "skipped": []}
 	}, path)
 
 def print_state(state: dict) -> None:
