@@ -19,10 +19,14 @@ def _load_config(config_file: str) -> dict:
 
 def _parse_arguments() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description="TISS Crawler")
-	parser.add_argument("--semester", type=str,
-		help="Semester to crawl, e.g. 2025W")
-	parser.add_argument("--resume", action="store_true",
-		help="Resume from existing state.json")
+	parser.add_argument(
+		"--semester", type=str,
+		help="Semester to crawl, e.g. 2025W"
+	)
+	parser.add_argument(
+		"--resume", action="store_true",
+		help="Resume from existing state.json"
+	)
 	return parser.parse_args()
 
 if __name__ == "__main__":
@@ -58,8 +62,10 @@ if __name__ == "__main__":
 		log.info("resuming with previous crawl")
 	# start new: clear everything
 	else:
-		log.info(f"starting new crawl: resume/state.json exists: "
-			f"{resume}/{file_exists}-> resetting state.json")
+		log.info(
+			f"starting new crawl: resume/state.json exists: "
+			f"{resume}/{file_exists}-> resetting state.json"
+		)
 		state.clear_state(semester, f"{output_basedir}state.json")
 
 	saved_state = state.load_state(f"{output_basedir}state.json") # load a state from the disk into a variable
@@ -68,10 +74,14 @@ if __name__ == "__main__":
 
 	# check if the given semester to process via CLI / config.yaml matches the saved state in state.json
 	if semester != saved_state['semester']:
-		log.error(f"Mismatch between semester in config.yaml/CLI parameter:"
-			f"'{semester}' and state.json: '{saved_state['semester']}'")
-		raise ValueError(f"Mismatch between semester in config.yaml/CLI parameter:"
-			f"'{semester}' and state.json: '{saved_state['semester']}'")
+		log.error(
+			f"Mismatch between semester in config.yaml/CLI parameter:"
+			f"'{semester}' and state.json: '{saved_state['semester']}'"
+		)
+		raise ValueError(
+			f"Mismatch between semester in config.yaml/CLI parameter:"
+			f"'{semester}' and state.json: '{saved_state['semester']}'"
+		)
 
 	# initialise http_client object (manages crawling and respects the crawl delay)
 	client = http_client.HttpClient(config)
@@ -89,10 +99,12 @@ if __name__ == "__main__":
 			# both languages needed here
 			curricula_page_source_de = client.fetch(config["crawl"]["url_curricula"], "de")
 			extracted_curricula_de = curricula.fetch_all_curricula(
-				curricula_page_source_de, output_basedir, semester, "de")
+				curricula_page_source_de, output_basedir, semester, "de"
+			)
 			curricula_page_source_en = client.fetch(config["crawl"]["url_curricula"], "en")
 			extracted_curricula_en = curricula.fetch_all_curricula(
-				curricula_page_source_en, output_basedir, semester, "en")
+				curricula_page_source_en, output_basedir, semester, "en"
+			)
 			curricula_extract = parser.merge_curricula(extracted_curricula_de, extracted_curricula_en)
 			saved_state['curricula']['queue'] = curricula_extract
 			state.save_state(saved_state, f"{output_basedir}state.json")
@@ -103,12 +115,14 @@ if __name__ == "__main__":
 			log.info(f"Process curricula: {entry}")
 			extracted_courses = courses_discovery.extract_courses(
 				client, config["crawl"]["url_base_curricula"],
-				entry, semester, output_basedir)
+				entry, semester, output_basedir
+			)
 
 			# save the extracted curricula -> courses info into a file in /data/study_programs_<semester>.json
 			try:
 				curricula_courses_state = state.load_state(
-					f"{output_datadir}study_programs_{semester}.json")
+					f"{output_datadir}study_programs_{semester}.json"
+				)
 			except FileNotFoundError:
 				curricula_courses_state = {}
 			for process_semester in extracted_courses:
@@ -135,8 +149,10 @@ if __name__ == "__main__":
 							saved_state['courses']['queue'].append(add_entry)
 
 			state.save_state(saved_state, f"{output_basedir}state.json")
-			state.save_state(curricula_courses_state,
-				f"{output_datadir}study_programs_{semester}.json")
+			state.save_state(
+				curricula_courses_state,
+				f"{output_datadir}study_programs_{semester}.json"
+			)
 
 		# Phase 3: drain courses queue
 		saved_state['courses'].setdefault('skipped', [])
@@ -148,7 +164,8 @@ if __name__ == "__main__":
 			# fetch the page
 			course_data = courses_crawl.process_course(
 				client, output_coursesdir, config["crawl"]["url_course"],
-				semester, course_number, course_lang)
+				semester, course_number, course_lang
+			)
 
 			# error during fetching of page
 			if not course_data:

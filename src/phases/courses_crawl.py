@@ -17,13 +17,19 @@ def process_course(
 
 	# generate the url with following format:
 	# https://tiss.tuwien.ac.at/course/courseDetails.xhtml?semester=2025W&courseNr=299002
-	course_url = f"{course_base_url}?courseNr={course_number[0:3]}{course_number[4:]}&semester={semester}"
+	course_url = (
+		f"{course_base_url}?courseNr={course_number[0:3]}"
+		f"{course_number[4:]}&semester={semester}"
+	)
 	log.info(f"process course '{course_url}' with language '{course_lang}'")
 
 	try:
 		page_source = client.fetch(course_url, course_lang)
 	except RuntimeError:
-		log.error(f"Skipping course {course_number} ({course_lang}) after all retries failed")
+		log.error(
+			f"Skipping course {course_number} "
+			f"({course_lang}) after all retries failed"
+		)
 		return None
 
 	# write page source to disk:

@@ -39,7 +39,12 @@ def save_state(state: dict, path: str) -> None:
 	Save a state atomically to avoid corruption on crash.
 	"""
 	path = Path(path)
-	with tempfile.NamedTemporaryFile('w', dir=path.parent, delete=False, suffix='.tmp') as tmp:
+	with tempfile.NamedTemporaryFile(
+		'w',
+		dir=path.parent,
+		delete=False,
+		suffix='.tmp'
+	) as tmp:
 		json.dump(state, tmp, indent=2, ensure_ascii=False)
 		tmp_path = tmp.name
 	os.replace(tmp_path, path)
