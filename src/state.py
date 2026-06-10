@@ -30,7 +30,7 @@ def load_state(path: str) -> dict:
 
 	try:
 		with open(path) as f:
-			return json.load(f)
+			return json.load(f, strict=False)
 	except json.JSONDecodeError as e:
 		raise ValueError(f"Invalid JSON in state file: {path}") from e
 
