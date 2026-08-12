@@ -22,45 +22,45 @@ The state is stored in output/state.json and has the following formatting:
 """
 
 def load_state(path: str) -> dict:
-	"""
-	Load a state (of the crawler) to continue from this point on.
-	"""
-	if not Path(path).exists():
-		raise FileNotFoundError(f"State file not found: {path}")
+    """
+    Load a state (of the crawler) to continue from this point on.
+    """
+    if not Path(path).exists():
+        raise FileNotFoundError(f"State file not found: {path}")
 
-	try:
-		with open(path) as f:
-			return json.load(f, strict=False)
-	except json.JSONDecodeError as e:
-		raise ValueError(f"Invalid JSON in state file: {path}") from e
+    try:
+        with open(path) as f:
+            return json.load(f, strict=False)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in state file: {path}") from e
 
 def save_state(state: dict, path: str) -> None:
-	"""
-	Save a state atomically to avoid corruption on crash.
-	"""
-	path = Path(path)
-	with tempfile.NamedTemporaryFile(
-		'w',
-		dir=path.parent,
-		delete=False,
-		suffix='.tmp'
-	) as tmp:
-		json.dump(state, tmp, indent=2, ensure_ascii=False)
-		tmp_path = tmp.name
-	os.replace(tmp_path, path)
+    """
+    Save a state atomically to avoid corruption on crash.
+    """
+    path = Path(path)
+    with tempfile.NamedTemporaryFile(
+        'w',
+        dir=path.parent,
+        delete=False,
+        suffix='.tmp'
+    ) as tmp:
+        json.dump(state, tmp, indent=2, ensure_ascii=False)
+        tmp_path = tmp.name
+    os.replace(tmp_path, path)
 
 def clear_state(semester: str, path: str) -> None:
-	"""
-	Clear the state ("clean slate")
-	"""
-	save_state({
-		"semester": semester,
-		"curricula": {"queue": []},
-		"courses": {"queue": [], "skipped": []}
-	}, path)
+    """
+    Clear the state ("clean slate")
+    """
+    save_state({
+        "semester": semester,
+        "curricula": {"queue": []},
+        "courses": {"queue": [], "skipped": []}
+    }, path)
 
 def print_state(state: dict) -> None:
-	"""
-	Print a state to the console
-	"""
-	print(f"State: {state}")
+    """
+    Print a state to the console
+    """
+    print(f"State: {state}")
